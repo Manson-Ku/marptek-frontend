@@ -11,10 +11,10 @@ export default function Dashboard() {
   const { data: session, status } = useSession();
   const [showProfile, setShowProfile] = useState(false);
   const [customerId, setCustomerId] = useState(null);
-  const { hasAccess, loading, error } = useHasGBPAccess();
+  const { hasAccess, loading, error } = useHasGBPAccess(); // ✅ 解構
 
-  // ✅ 認證狀態尚未完成
-  if (status === "loading" || hasGBP === 'loading') {
+  // ✅ Loading 階段
+  if (status === "loading" || loading) {
     return <p>驗證中...</p>;
   }
 
@@ -23,31 +23,35 @@ export default function Dashboard() {
     return (
       <div className="login-screen">
         <h1>尚未登入</h1>
-        <button onClick={() => signIn()} className="login-button">前往登入</button>
+        <button onClick={() => signIn()} className="login-button">
+          前往登入
+        </button>
       </div>
     );
   }
 
-  // ✅ 已登入但缺少 GBP 權限
+  // ✅ 已登入但未授權商家
   if (!hasAccess) {
     return (
       <div className="alert">
         ⚠️ 您尚未完整授權商家存取權限，
-        <button onClick={() =>
-          signIn('google', {
-            access_type: 'offline',
-            prompt: 'consent',
-            scope: 'https://www.googleapis.com/auth/business.manage',
-            callbackUrl: '/',
-          })
-        }>
+        <button
+          onClick={() =>
+            signIn('google', {
+              access_type: 'offline',
+              prompt: 'consent',
+              scope: 'https://www.googleapis.com/auth/business.manage',
+              callbackUrl: '/',
+            })
+          }
+        >
           點此補授權
         </button>
       </div>
     );
   }
 
-  // ✅ 有 session + 有 GBP 權限，再送 Cloud Run API
+  // ✅ 授權成功，送 Cloud Run API
   useEffect(() => {
     const callCloudRunLogin = async () => {
       if (session?.idToken && session?.refreshToken) {
@@ -78,7 +82,6 @@ export default function Dashboard() {
     callCloudRunLogin();
   }, [session?.idToken, session?.refreshToken]);
 
-  // ✅ 畫面內容
   return (
     <div className="dashboard-layout">
       <Sidebar />
