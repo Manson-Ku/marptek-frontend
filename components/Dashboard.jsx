@@ -1,49 +1,24 @@
 'use client';
 
 import { useSession, signIn, signOut } from "next-auth/react";
+import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import ProfileCard from './ProfileCard';
-import { useState, useEffect } from 'react';
+import { useHasGBPAccess } from '@/hooks/useHasGBPAccess';
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const [showProfile, setShowProfile] = useState(false);
-  const [customerId, setCustomerId] = useState(null); // ✅ 儲存從 Cloud Run 拿到的 customer_id
+  const [customerId, setCustomerId] = useState(null);
+  const hasGBP = useHasGBPAccess();
 
-  // ✅ 當 session.idToken 出現時，呼叫 Cloud Run
-  useEffect(() => {
-    const callCloudRunLogin = async () => {
-      if (session?.idToken) {
-        try {
-          const res = await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ id_token: session.idToken,refresh_token: session.refreshToken}),
-          });
-
-          const data = await res.json();
-          console.log('✅ Cloud Run Response:', data);
-
-          if (data?.user?.customer_id) {
-            setCustomerId(data.user.customer_id);
-          }
-
-        } catch (err) {
-          console.error('❌ 呼叫 Cloud Run 發生錯誤:', err);
-        }
-      }
-    };
-
-    callCloudRunLogin();
-  }, [session?.idToken]);
-
-  if (status === "loading") {
-    return <p>Loading...</p>;
+  // ✅ 認證狀態尚未完成
+  if (status === "loading" || hasGBP === 'loading') {
+    return <p>驗證中...</p>;
   }
 
+  // ✅ 尚未登入
   if (!session) {
     return (
       <div className="login-screen">
@@ -55,17 +30,62 @@ export default function Dashboard() {
     );
   }
 
+  // ✅ 已登入但缺少 GBP 權限
+  if (!hasGBP) {
+    return (
+      <div className="alert">
+        ⚠️ 您尚未完整授權商家存取權限，
+        <button
+          onClick={() => signIn('google', {
+            access_type: 'offline',
+            prompt: 'consent',
+            scope: 'https://www.googleapis.com/auth/business.manage',
+            callbackUrl: '/',
+          })}
+        >
+          點此補授權
+        </button>
+      </div>
+    );
+  }
+
+  // ✅ 有 session + 有 GBP 權限，再送 Cloud Run API
+  useEffect(() => {
+    const callCloudRunLogin = async () => {
+      if (session?.idToken && session?.refreshToken) {
+        try {
+          const res = await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              id_token: session.idToken,
+              refresh_token: session.refreshToken
+            }),
+          });
+
+          const data = await res.json();
+          console.log('✅ Cloud Run Response:', data);
+
+          if (data?.user?.customer_id) {
+            setCustomerId(data.user.customer_id);
+          }
+        } catch (err) {
+          console.error('❌ 呼叫 Cloud Run 發生錯誤:', err);
+        }
+      }
+    };
+
+    callCloudRunLogin();
+  }, [session?.idToken, session?.refreshToken]);
+
+  // ✅ 畫面內容
   return (
     <div className="dashboard-layout">
-      {/* Sidebar */}
       <Sidebar />
-
-      {/* Main content */}
       <div className="dashboard-main">
-        {/* Header */}
         <Header onProfileClick={() => setShowProfile(!showProfile)} />
-
-        {/* Profile Card */}
         {showProfile && (
           <div className="profile-card-container">
             <ProfileCard
@@ -74,8 +94,6 @@ export default function Dashboard() {
             />
           </div>
         )}
-
-        {/* Main Content */}
         <main className="dashboard-content">
           {customerId && (
             <div className="dashboard-banner">
