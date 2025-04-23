@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useTranslations } from 'next-intl';
-import { smartSignIn } from '@/utils/authUtils'; // ✅ 新增引用
+import { smartSignIn } from '@/utils/authUtils';
 
 export default function LoginPage() {
   const messages = useMessages();
@@ -29,32 +29,37 @@ export default function LoginPage() {
   };
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
-      <div className="login-container">
-        <div className="login-wrapper">
-          <div className="login-box">
-            <h1 className="login-title">{t('title')}</h1>
+  <NextIntlClientProvider locale={locale} messages={messages}>
+    <div className="login-container">
+      
+      {/* ✅ 背景影片：放 login-wrapper 前，並放在 container 最上層 */}
+      <video
+        className="login-bg-video"
+        src="/login_bg_video.mp4"
+        autoPlay
+        muted
+        loop
+        playsInline
+      ></video>
 
-            {error && (
-              <div className="login-error">
-                {t('loginError')}
-              </div>
-            )}
+      <div className="login-wrapper">
+        <div className="login-box">
+          <h1 className="login-title">{t('title')}</h1>
+          {error && <div className="login-error">{t('loginError')}</div>}
+          <button
+            onClick={handleGoogleLogin}
+            className="google-button"
+            disabled={loading}
+          >
+            {loading ? t('loggingIn') : t('signInWithGoogle')}
+          </button>
+        </div>
 
-            <button
-              onClick={handleGoogleLogin}
-              className="google-button"
-              disabled={loading}
-            >
-              {loading ? t('loggingIn') : t('signInWithGoogle')}
-            </button>
-          </div>
-
-          <div className="language-switcher-container">
-            <LanguageSwitcher />
-          </div>
+        <div className="language-switcher-container">
+          <LanguageSwitcher />
         </div>
       </div>
-    </NextIntlClientProvider>
-  );
+    </div>
+  </NextIntlClientProvider>
+    );
 }
