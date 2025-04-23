@@ -1,0 +1,48 @@
+{
+  "Login": {
+    "title": "登入你的帳號",
+    "emailPlaceholder": "電子郵件",
+    "passwordPlaceholder": "密碼",
+    "signInWithPassword": "帳密登入",
+    "signInWithGoogle": "使用 Google 帳號登入",
+    "or": "或",
+    "loading": "載入中...",
+    "loginError": "登入失敗，請檢查帳號密碼或重新登入！",
+    "loggingIn": "登入中..."
+  },
+  "Dashboard": {
+    "title": "MARPTEK SaaS 後台",
+    "logout": "登出",
+    "userInfo": "使用者資料",
+    "name": "姓名",
+    "email": "電子郵件",
+    "refreshToken": "Refresh Token",
+    "startManagingGBP": "開始管理 GBP",
+    "overview": "總覽",
+    "overviewDescription": "這邊會展示你的總覽指標，例如評論數、平均星等等。",
+    "recentActivity": "近期活動",
+    "recentActivityDescription": "顯示最近的帳號活動記錄，例如新增商家、評論回覆等。",
+    "notLoggedIn": "尚未登入",
+    "goLogin": "前往登入"
+  },
+  "Sidebar": {
+    "dashboard": "儀表板",
+    "performance": "成效分析",
+    "reviews": "評論管理",
+    "autoResponse": "自動回覆",
+    "googleQA": "Google QA",
+    "locations": "門市據點",
+    "competitors": "競爭者分析",
+    "manageLocations": "管理門市",
+    "posts": "貼文管理",
+    "imageManagement": "圖片管理",
+    "reviewShowcase": "評論展示（Beta）"
+  },
+  "Header": {
+    "dashboard": "儀表板"
+  },
+  "Profile": {
+    "logout": "登出",
+    "startManagingGBP": "開始管理GBP"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "Login": {
+    "title": "Sign In to Your Account",
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "Password",
+    "signInWithPassword": "Sign in with Password",
+    "signInWithGoogle": "Sign in with Google",
+    "or": "OR",
+    "loading": "Loading...",
+    "loginError": "Login failed. Please check your credentials and try again.",
+    "loggingIn": "Signing in..."
+  },
+  "Dashboard": {
+    "title": "MARPTEK SaaS Admin",
+    "logout": "Log out",
+    "userInfo": "User Info",
+    "name": "Name",
+    "email": "Email",
+    "refreshToken": "Refresh Token",
+    "startManagingGBP": "Start Managing GBP",
+    "overview": "Overview",
+    "overviewDescription": "Here will show your overview KPIs like review counts, average rating, etc.",
+    "recentActivity": "Recent Activity",
+    "recentActivityDescription": "Display your recent account activities such as adding businesses, replying to reviews, etc.",
+    "notLoggedIn": "Not logged in",
+    "goLogin": "Go to Login"
+  },
+  "Sidebar": {
+    "dashboard": "Dashboard",
+    "performance": "Performance",
+    "reviews": "Reviews",
+    "autoResponse": "Auto Response",
+    "googleQA": "Google QA",
+    "locations": "Locations",
+    "competitors": "Competitors",
+    "manageLocations": "Manage Locations",
+    "posts": "Posts",
+    "imageManagement": "Image Management",
+    "reviewShowcase": "Review Showcase (Beta)"
+  },
+  "Header": {
+    "dashboard": "Dashboard"
+  },
+  "Profile": {
+    "logout": "Log out",
+    "startManagingGBP": "Start Managing GBP"
+  }
+}
