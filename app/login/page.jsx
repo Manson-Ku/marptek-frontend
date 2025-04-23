@@ -61,36 +61,38 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="login-form">
-              <input
-                name="email"
-                type="email"
-                placeholder={t('emailPlaceholder')}
-                required
-                value={form.email}
-                onChange={handleChange}
-                className="login-input"
-              />
-              <input
-                name="password"
-                type="password"
-                placeholder={t('passwordPlaceholder')}
-                required
-                value={form.password}
-                onChange={handleChange}
-                className="login-input"
-              />
-              <button
-                type="submit"
-                className="login-button"
-                disabled={loading}
-              >
-                {loading ? t('loggingIn') : t('signInWithPassword')}
-              </button>
-            </form>
-
+            {false && (
+              <form onSubmit={handleSubmit} className="login-form">
+                <input
+                  name="email"
+                  type="email"
+                  placeholder={t('emailPlaceholder')}
+                  required
+                  value={form.email}
+                  onChange={handleChange}
+                  className="login-input"
+                />
+                <input
+                  name="password"
+                  type="password"
+                  placeholder={t('passwordPlaceholder')}
+                  required
+                  value={form.password}
+                  onChange={handleChange}
+                  className="login-input"
+                />
+                <button
+                  type="submit"
+                  className="login-button"
+                  disabled={loading}
+                >
+                  {loading ? t('loggingIn') : t('signInWithPassword')}
+                </button>
+              </form>
+            )}
+            {false && (
             <div className="login-divider">{t('or')}</div>
-
+            )}
             <button
               onClick={handleGoogleLogin}
               className="google-button"
