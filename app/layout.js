@@ -1,12 +1,14 @@
-import './globals.css';
-import Providers from '@/components/Providers'; // ✅ 引用新的 Providers.jsx
+'use client'
 
-export default function RootLayout({ children }) {
+import { SessionProvider } from 'next-auth/react'
+import AuthGuard from './AuthGuard'
+
+export default function Providers({ children }) {
   return (
-    <html lang="zh-TW"><body>
-      <Providers>
+    <SessionProvider>
+      <AuthGuard>
         {children}
-      </Providers>
-    </body></html>
-  );
+      </AuthGuard>
+    </SessionProvider>
+  )
 }
