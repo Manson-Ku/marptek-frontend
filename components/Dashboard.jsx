@@ -14,7 +14,7 @@ export default function Dashboard() {
 
   // ✅ 僅登入後才執行 GBP 權限檢查
   const isAuthed = status === 'authenticated';
-  const { hasAccess, loading, error } = useHasGBPAccess(isAuthed);
+  const { hasAccess, loading, error } = useHasGBPAccess();
 
   // ✅ 1. NextAuth 正在初始化
   if (status === 'loading') {
