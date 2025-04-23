@@ -1,49 +1,52 @@
-'use client';
+'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import { NextIntlClientProvider } from 'next-intl';
+import { createContext, useContext, useEffect, useState } from 'react'
+import { NextIntlClientProvider } from 'next-intl'
 
-const LocaleContext = createContext(null);
+const LocaleContext = createContext(null)
 
 export function useLocale() {
-  return useContext(LocaleContext);
+  return useContext(LocaleContext)
 }
 
 export default function LocaleProvider({ children }) {
-  const [locale, setLocale] = useState(null); // ✅ 改成 null，避免預設 zh-TW 造成 hydration mismatch
-  const [messages, setMessages] = useState(null);
+  const [locale, setLocale] = useState(null)
+  const [messages, setMessages] = useState(null)
 
   useEffect(() => {
-    const storedLocale = localStorage.getItem('locale') || 'zh-TW';
-    setLocale(storedLocale);
-  }, []);
+    const storedLocale = localStorage.getItem('locale') || 'zh-TW'
+    setLocale(storedLocale)
+  }, [])
 
   useEffect(() => {
-    if (!locale) return;
+    if (!locale) return
     const loadMessages = async () => {
       try {
-        const response = await fetch(`/messages/${locale}.json?_=${Date.now()}`);
+        const response = await fetch(`/messages/${locale}.json?_=${Date.now()}`)
         if (!response.ok) {
-          console.error('❌ Fetch messages failed:', response.status);
-          return;
+          console.error('❌ Fetch messages failed:', response.status)
+          return
         }
-        const data = await response.json();
-        setMessages(data);
+        const data = await response.json()
+        setMessages(data)
       } catch (error) {
-        console.error('❌ Load messages error', error);
+        console.error('❌ Load messages error', error)
       }
-    };
-    loadMessages();
-  }, [locale]);
+    }
+    loadMessages()
+  }, [locale])
 
-  // ✅ 若語系尚未載入，不渲染任何內容，避免 hydration mismatch
-  if (!locale || !messages) return null;
+  const ready = locale && messages
+
+  if (!ready) {
+    return typeof children === 'function' ? children(false) : null
+  }
 
   return (
     <LocaleContext.Provider value={{ locale, setLocale }}>
       <NextIntlClientProvider locale={locale} messages={messages}>
-        {children}
+        {typeof children === 'function' ? children(true) : children}
       </NextIntlClientProvider>
     </LocaleContext.Provider>
-  );
+  )
 }

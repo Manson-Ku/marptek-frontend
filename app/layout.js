@@ -1,14 +1,19 @@
-'use client'
+import './globals.css'
+import Providers from '@/components/Providers'
 
-import { SessionProvider } from 'next-auth/react'
-import AuthGuard from '@/components/AuthGuard'
+export const metadata = {
+  title: 'MARPTEK',
+  description: '地圖行銷科技 - 開店與商家決策的 AI 助手',
+}
 
-export default function Providers({ children }) {
+export default function RootLayout({ children }) {
   return (
-    <SessionProvider>
-      <AuthGuard>
-        {children}
-      </AuthGuard>
-    </SessionProvider>
+    <html lang="zh-TW">
+      <body>
+        <Providers>
+          {children}
+        </Providers>
+      </body>
+    </html>
   )
 }
