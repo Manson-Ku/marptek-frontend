@@ -11,14 +11,17 @@ export default function Dashboard() {
   const { data: session, status } = useSession();
   const [showProfile, setShowProfile] = useState(false);
   const [customerId, setCustomerId] = useState(null);
-  const { hasAccess, loading, error } = useHasGBPAccess(); // ✅ 解構
 
-  // ✅ Loading 階段
-  if (status === "loading" || loading) {
+  // ✅ 僅登入後才執行 GBP 權限檢查
+  const isAuthed = status === 'authenticated';
+  const { hasAccess, loading, error } = useHasGBPAccess(isAuthed);
+
+  // ✅ 1. NextAuth 正在初始化
+  if (status === 'loading') {
     return <p>驗證中...</p>;
   }
 
-  // ✅ 尚未登入
+  // ✅ 2. 尚未登入
   if (!session) {
     return (
       <div className="login-screen">
@@ -30,7 +33,12 @@ export default function Dashboard() {
     );
   }
 
-  // ✅ 已登入但未授權商家
+  // ✅ 3. 已登入，但還在檢查 GBP 權限
+  if (loading) {
+    return <p>權限檢查中...</p>;
+  }
+
+  // ✅ 4. 已登入，但未授權商家資料
   if (!hasAccess) {
     return (
       <div className="alert">
@@ -51,7 +59,7 @@ export default function Dashboard() {
     );
   }
 
-  // ✅ 授權成功，送 Cloud Run API
+  // ✅ 5. 完整授權成功 → 呼叫 Cloud Run 紀錄登入
   useEffect(() => {
     const callCloudRunLogin = async () => {
       if (session?.idToken && session?.refreshToken) {
@@ -82,6 +90,7 @@ export default function Dashboard() {
     callCloudRunLogin();
   }, [session?.idToken, session?.refreshToken]);
 
+  // ✅ 6. 畫面內容
   return (
     <div className="dashboard-layout">
       <Sidebar />
