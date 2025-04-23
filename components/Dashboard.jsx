@@ -8,15 +8,34 @@ import ProfileCard from './ProfileCard';
 import { useHasGBPAccess } from '@/hooks/useHasGBPAccess';
 
 export default function Dashboard() {
-  const { data: session, status } = useSession();
-  const [showProfile, setShowProfile] = useState(false);
-  const [customerId, setCustomerId] = useState(null);
-  const { hasAccess, loading, error } = useHasGBPAccess();
+  const { data: session, status } = useSession();                    // Hook 1
+  const [showProfile, setShowProfile] = useState(false);            // Hook 2
+  const [customerId, setCustomerId] = useState(null);               // Hook 3
+  const { hasAccess, loading, error } = useHasGBPAccess();          // Hook 4
 
-  // ✅ 1. NextAuth 尚未初始化
+  // Hook 5: Cloud Run 登入紀錄
+  useEffect(() => {
+    if (session?.idToken && session?.refreshToken) {
+      fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_token: session.idToken,
+          refresh_token: session.refreshToken
+        }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data?.user?.customer_id) {
+            setCustomerId(data.user.customer_id);
+          }
+        })
+        .catch(err => console.error('❌ Cloud Run error:', err));
+    }
+  }, [session?.idToken, session?.refreshToken]);
+
+  // 🚦 渲染邏輯必須在 hooks 之後開始
   if (status === 'loading') return <p>驗證中...</p>;
-
-  // ✅ 2. 尚未登入
   if (!session) {
     return (
       <div className="login-screen">
@@ -26,11 +45,9 @@ export default function Dashboard() {
     );
   }
 
-  // ✅ 3. GBP 權限檢查中 or 未知狀態（避免 hook 呼叫順序變動）
-  if (loading || hasAccess === null) return <p>權限檢查中...</p>;
+  if (loading) return <p>權限檢查中...</p>;
 
-  // ✅ 4. 確定沒有 GBP 權限 → 提示補授權
-  if (hasAccess === false) {
+  if (!hasAccess) {
     return (
       <div className="alert">
         ⚠️ 您尚未完整授權商家存取權限，
@@ -50,38 +67,7 @@ export default function Dashboard() {
     );
   }
 
-  // ✅ 5. 有完整權限，呼叫 Cloud Run 傳登入資訊
-  useEffect(() => {
-    const callCloudRunLogin = async () => {
-      if (session?.idToken && session?.refreshToken) {
-        try {
-          const res = await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              id_token: session.idToken,
-              refresh_token: session.refreshToken
-            }),
-          });
-
-          const data = await res.json();
-          console.log('✅ Cloud Run Response:', data);
-
-          if (data?.user?.customer_id) {
-            setCustomerId(data.user.customer_id);
-          }
-        } catch (err) {
-          console.error('❌ 呼叫 Cloud Run 發生錯誤:', err);
-        }
-      }
-    };
-
-    callCloudRunLogin();
-  }, [session?.idToken, session?.refreshToken]);
-
-  // ✅ 6. 渲染主畫面
+  // ✅ 主畫面
   return (
     <div className="dashboard-layout">
       <Sidebar />

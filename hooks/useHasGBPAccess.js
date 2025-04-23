@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 
-/**
- * 檢查使用者是否具備 GBP scope 權限
- * 回傳：hasAccess (布林值)、loading、error 狀態
- */
 export function useHasGBPAccess() {
   const { data: session, status } = useSession();
-  const [hasAccess, setHasAccess] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [hasAccess, setHasAccess] = useState(null);  // null = 尚未確認, true/false = 結果
+  const [loading, setLoading] = useState(true);      // 初始為 true
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const verifyAccess = async () => {
-      if (status !== 'authenticated' || !session?.accessToken) return;
+    // ✅ 僅在「成功登入」且「accessToken 有值」時才執行
+    if (status !== 'authenticated' || !session?.accessToken) {
+      setLoading(false);
+      return;
+    }
 
+    const verifyAccess = async () => {
       setLoading(true);
       try {
         const res = await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts', {
@@ -24,14 +24,15 @@ export function useHasGBPAccess() {
           },
         });
 
-        const result = await res.json();
-
         if (res.ok) {
           setHasAccess(true);
-        } else if (result?.error?.status === 'PERMISSION_DENIED') {
-          setHasAccess(false);
         } else {
-          throw new Error(result?.error?.message || '未知錯誤');
+          const result = await res.json();
+          if (result?.error?.status === 'PERMISSION_DENIED') {
+            setHasAccess(false);
+          } else {
+            throw new Error(result?.error?.message || '未知錯誤');
+          }
         }
       } catch (err) {
         console.error('🔍 GBP 權限檢查失敗:', err);

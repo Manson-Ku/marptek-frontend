@@ -10,40 +10,34 @@ export function useLocale() {
 }
 
 export default function LocaleProvider({ children }) {
-  const [locale, setLocale] = useState('zh-TW');
+  const [locale, setLocale] = useState(null); // ✅ 改成 null，避免預設 zh-TW 造成 hydration mismatch
   const [messages, setMessages] = useState(null);
 
   useEffect(() => {
     const storedLocale = localStorage.getItem('locale') || 'zh-TW';
     setLocale(storedLocale);
-    loadMessages(storedLocale);
   }, []);
 
-  // 當 locale 改變時，自動重新 fetch 對應的 messages
   useEffect(() => {
-    if (locale) {
-      loadMessages(locale);
-    }
+    if (!locale) return;
+    const loadMessages = async () => {
+      try {
+        const response = await fetch(`/messages/${locale}.json?_=${Date.now()}`);
+        if (!response.ok) {
+          console.error('❌ Fetch messages failed:', response.status);
+          return;
+        }
+        const data = await response.json();
+        setMessages(data);
+      } catch (error) {
+        console.error('❌ Load messages error', error);
+      }
+    };
+    loadMessages();
   }, [locale]);
 
-  const loadMessages = async (targetLocale) => {
-    try {
-      const response = await fetch(`/messages/${targetLocale}.json?_=${Date.now()}`);
-      if (!response.ok) {
-        console.error('❌ Fetch messages failed:', response.status);
-        return;
-      }
-      const data = await response.json();
-      setMessages(data);
-    } catch (error) {
-      console.error('❌ Load messages error', error);
-    }
-  };
-
-  if (!messages) {
-    // 當 messages 還沒準備好時，不渲染
-    return null;
-  }
+  // ✅ 若語系尚未載入，不渲染任何內容，避免 hydration mismatch
+  if (!locale || !messages) return null;
 
   return (
     <LocaleContext.Provider value={{ locale, setLocale }}>
