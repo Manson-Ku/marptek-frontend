@@ -36,8 +36,22 @@ export default function Dashboard() {
 
   // ✅ 商家權限尚未確認完成（包含 loading 中 或 hasAccess 尚未決定）
   if (loading || hasAccess === null) {
-    return <p className="p-6 text-center text-gray-500">🔄 商家權限檢查中...</p>
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        color: '#666',
+        fontSize: '1rem'
+      }}>
+        <img src="/spinner.svg" alt="Loading..." width="48" height="48" style={{ marginBottom: '1rem' }} />
+        <p>正在確認您的商家權限，請稍候...</p>
+      </div>
+    )
   }
+  
 
   // ❌ 已確定為未授權，顯示提示 UI
   if (!hasAccess) {

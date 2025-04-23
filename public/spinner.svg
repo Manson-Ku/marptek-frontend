@@ -1,0 +1,13 @@
+<!-- public/spinner.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 50 50">
+  <path fill="#3b82f6" d="M43.935,25.145c0-10.318-8.364-18.682-18.682-18.682c-10.318,0-18.682,8.364-18.682,18.682h4.068
+    c0-8.068,6.546-14.614,14.614-14.614s14.614,6.546,14.614,14.614H43.935z">
+    <animateTransform attributeType="xml"
+      attributeName="transform"
+      type="rotate"
+      from="0 25 25"
+      to="360 25 25"
+      dur="0.6s"
+      repeatCount="indefinite"/>
+  </path>
+</svg>
