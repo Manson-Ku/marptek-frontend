@@ -5,24 +5,20 @@ import { useSession } from 'next-auth/react'
 
 export function useHasGBPAccess() {
   const { data: session, status } = useSession()
-  const [hasAccess, setHasAccess] = useState(null) // null = 尚未確認, true/false = 結果
-  const [loading, setLoading] = useState(true)
+
+  // ✅ 初始狀態直接從 sessionStorage 判斷
+  const cachedAccess = typeof window !== 'undefined'
+    ? sessionStorage.getItem('hasGBPAccess')
+    : null
+
+  const [hasAccess, setHasAccess] = useState(
+    cachedAccess === 'true' ? true : cachedAccess === 'false' ? false : null
+  )
+  const [loading, setLoading] = useState(cachedAccess === null)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (status !== 'authenticated') return
-    if (!session?.accessToken) {
-      console.warn('⚠️ accessToken 尚未準備好，延後 GBP 權限檢查')
-      return
-    }
-
-    // 🧠 加入 sessionStorage 快取邏輯
-    const cachedAccess = sessionStorage.getItem('hasGBPAccess')
-    if (cachedAccess !== null) {
-      setHasAccess(cachedAccess === 'true')
-      setLoading(false)
-      return
-    }
+    if (status !== 'authenticated' || !session?.accessToken || cachedAccess !== null) return
 
     const verifyAccess = async () => {
       setLoading(true)
@@ -34,20 +30,11 @@ export function useHasGBPAccess() {
           },
         })
 
-        if (res.ok) {
-          const result = await res.json()
-          const isAuthorized = Array.isArray(result?.accounts) && result.accounts.length > 0
-          sessionStorage.setItem('hasGBPAccess', isAuthorized ? 'true' : 'false')
-          setHasAccess(isAuthorized)
-        } else {
-          const result = await res.json()
-          if (result?.error?.status === 'PERMISSION_DENIED') {
-            sessionStorage.setItem('hasGBPAccess', 'false')
-            setHasAccess(false)
-          } else {
-            throw new Error(result?.error?.message || '未知錯誤')
-          }
-        }
+        const result = await res.json()
+        const isAuthorized = res.ok && Array.isArray(result?.accounts) && result.accounts.length > 0
+
+        sessionStorage.setItem('hasGBPAccess', isAuthorized ? 'true' : 'false')
+        setHasAccess(isAuthorized)
       } catch (err) {
         console.error('🔍 GBP 權限檢查失敗:', err)
         setError(err.message)
@@ -58,7 +45,7 @@ export function useHasGBPAccess() {
     }
 
     verifyAccess()
-  }, [session?.accessToken, status])
+  }, [session?.accessToken, status, cachedAccess])
 
   return { hasAccess, loading, error }
 }
