@@ -34,9 +34,12 @@ export default function Dashboard() {
     }
   }, [session?.idToken, session?.refreshToken])
 
-  // 商家權限未授權，提示補授權
-  if (loading) return <p className="p-6 text-center text-gray-500">🔄 商家權限檢查中...</p>
+  // ✅ 商家權限尚未確認完成（包含 loading 中 或 hasAccess 尚未決定）
+  if (loading || hasAccess === null) {
+    return <p className="p-6 text-center text-gray-500">🔄 商家權限檢查中...</p>
+  }
 
+  // ❌ 已確定為未授權，顯示提示 UI
   if (!hasAccess) {
     return (
       <div className="alert p-6 text-red-500 text-center">
@@ -54,6 +57,7 @@ export default function Dashboard() {
       </div>
     )
   }
+
 
   // ✅ 主畫面
   return (

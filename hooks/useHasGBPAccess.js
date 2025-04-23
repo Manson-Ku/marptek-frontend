@@ -1,50 +1,57 @@
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useSession } from 'next-auth/react'
 
 export function useHasGBPAccess() {
-  const { data: session, status } = useSession();
-  const [hasAccess, setHasAccess] = useState(null);  // null = 尚未確認, true/false = 結果
-  const [loading, setLoading] = useState(true);      // 初始為 true
-  const [error, setError] = useState(null);
+  const { data: session, status } = useSession()
+  const [hasAccess, setHasAccess] = useState(null) // null = 尚未確認, true/false = 結果
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    // ✅ 僅在「成功登入」且「accessToken 有值」時才執行
-    if (status !== 'authenticated' || !session?.accessToken) {
-      setLoading(false);
-      return;
+    // ✅ 等待 session 完全 ready（status: authenticated 且 accessToken 存在）
+    if (status !== 'authenticated') return
+
+    if (!session?.accessToken) {
+      // 若沒有 accessToken，延後判斷
+      console.warn('⚠️ accessToken 尚未準備好，延後 GBP 權限檢查')
+      return
     }
 
     const verifyAccess = async () => {
-      setLoading(true);
+      setLoading(true)
       try {
         const res = await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts', {
           method: 'GET',
           headers: {
             Authorization: `Bearer ${session.accessToken}`,
           },
-        });
+        })
 
         if (res.ok) {
-          setHasAccess(true);
+          const result = await res.json()
+          const isAuthorized = Array.isArray(result?.accounts) && result.accounts.length > 0
+          setHasAccess(isAuthorized)
         } else {
-          const result = await res.json();
+          const result = await res.json()
           if (result?.error?.status === 'PERMISSION_DENIED') {
-            setHasAccess(false);
+            setHasAccess(false)
           } else {
-            throw new Error(result?.error?.message || '未知錯誤');
+            throw new Error(result?.error?.message || '未知錯誤')
           }
         }
       } catch (err) {
-        console.error('🔍 GBP 權限檢查失敗:', err);
-        setError(err.message);
-        setHasAccess(false);
+        console.error('🔍 GBP 權限檢查失敗:', err)
+        setError(err.message)
+        setHasAccess(false)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    verifyAccess();
-  }, [session?.accessToken, status]);
+    verifyAccess()
+  }, [session?.accessToken, status])
 
-  return { hasAccess, loading, error };
+  return { hasAccess, loading, error }
 }
