@@ -10,12 +10,17 @@ export function useHasGBPAccess() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    // ✅ 等待 session 完全 ready（status: authenticated 且 accessToken 存在）
     if (status !== 'authenticated') return
-
     if (!session?.accessToken) {
-      // 若沒有 accessToken，延後判斷
       console.warn('⚠️ accessToken 尚未準備好，延後 GBP 權限檢查')
+      return
+    }
+
+    // 🧠 加入 sessionStorage 快取邏輯
+    const cachedAccess = sessionStorage.getItem('hasGBPAccess')
+    if (cachedAccess !== null) {
+      setHasAccess(cachedAccess === 'true')
+      setLoading(false)
       return
     }
 
@@ -32,10 +37,12 @@ export function useHasGBPAccess() {
         if (res.ok) {
           const result = await res.json()
           const isAuthorized = Array.isArray(result?.accounts) && result.accounts.length > 0
+          sessionStorage.setItem('hasGBPAccess', isAuthorized ? 'true' : 'false')
           setHasAccess(isAuthorized)
         } else {
           const result = await res.json()
           if (result?.error?.status === 'PERMISSION_DENIED') {
+            sessionStorage.setItem('hasGBPAccess', 'false')
             setHasAccess(false)
           } else {
             throw new Error(result?.error?.message || '未知錯誤')
