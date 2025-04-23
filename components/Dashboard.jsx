@@ -1,19 +1,19 @@
-'use client';
+'use client'
 
-import { useSession, signIn, signOut } from "next-auth/react";
-import { useState, useEffect } from 'react';
-import Sidebar from './Sidebar';
-import Header from './Header';
-import ProfileCard from './ProfileCard';
-import { useHasGBPAccess } from '@/hooks/useHasGBPAccess';
+import { useSession, signOut } from "next-auth/react"
+import { useState, useEffect } from 'react'
+import Sidebar from './Sidebar'
+import Header from './Header'
+import ProfileCard from './ProfileCard'
+import { useHasGBPAccess } from '@/hooks/useHasGBPAccess'
 
 export default function Dashboard() {
-  const { data: session, status } = useSession();                    // Hook 1
-  const [showProfile, setShowProfile] = useState(false);            // Hook 2
-  const [customerId, setCustomerId] = useState(null);               // Hook 3
-  const { hasAccess, loading, error } = useHasGBPAccess();          // Hook 4
+  const { data: session } = useSession()                            // 不再處理 status
+  const [showProfile, setShowProfile] = useState(false)
+  const [customerId, setCustomerId] = useState(null)
+  const { hasAccess, loading } = useHasGBPAccess()
 
-  // Hook 5: Cloud Run 登入紀錄
+  // 呼叫 Cloud Run API 寫入登入記錄
   useEffect(() => {
     if (session?.idToken && session?.refreshToken) {
       fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
@@ -27,44 +27,32 @@ export default function Dashboard() {
         .then(res => res.json())
         .then(data => {
           if (data?.user?.customer_id) {
-            setCustomerId(data.user.customer_id);
+            setCustomerId(data.user.customer_id)
           }
         })
-        .catch(err => console.error('❌ Cloud Run error:', err));
+        .catch(err => console.error('❌ Cloud Run error:', err))
     }
-  }, [session?.idToken, session?.refreshToken]);
+  }, [session?.idToken, session?.refreshToken])
 
-  // 🚦 渲染邏輯必須在 hooks 之後開始
-  if (status === 'loading') return <p>驗證中...</p>;
-  if (!session) {
-    return (
-      <div className="login-screen">
-        <h1>尚未登入</h1>
-        <button onClick={() => signIn()} className="login-button">前往登入</button>
-      </div>
-    );
-  }
-
-  if (loading) return <p>權限檢查中...</p>;
+  // 商家權限未授權，提示補授權
+  if (loading) return <p className="p-6 text-center text-gray-500">🔄 商家權限檢查中...</p>
 
   if (!hasAccess) {
     return (
-      <div className="alert">
+      <div className="alert p-6 text-red-500 text-center">
         ⚠️ 您尚未完整授權商家存取權限，
         <button
+          className="ml-2 underline text-blue-600"
           onClick={() =>
-            signIn('google', {
-              access_type: 'offline',
-              prompt: 'consent',
-              scope: 'https://www.googleapis.com/auth/business.manage',
-              callbackUrl: '/',
+            signOut({
+              callbackUrl: '/login',
             })
           }
         >
           點此補授權
         </button>
       </div>
-    );
+    )
   }
 
   // ✅ 主畫面
@@ -95,5 +83,5 @@ export default function Dashboard() {
         </main>
       </div>
     </div>
-  );
+  )
 }
