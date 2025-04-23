@@ -2,26 +2,22 @@
 
 import { useSession, signIn } from 'next-auth/react'
 import { useEffect } from 'react'
-import { usePathname } from 'next/navigation'
 
 export default function AuthGuard({ children }) {
   const { status } = useSession()
-  const pathname = usePathname()
-
-  const publicPaths = ['/login']
 
   useEffect(() => {
-    if (status === 'unauthenticated' && !publicPaths.includes(pathname)) {
-      signIn('google')
+    if (status === 'unauthenticated') {
+      signIn('google') // 這裡不顯示「尚未登入畫面」，直接跳轉
     }
-  }, [status, pathname])
+  }, [status])
 
   if (status === 'loading') {
-    return <div className="p-6 text-center text-gray-500">🔐 驗證登入中...</div>
+    return <div className="p-6 text-center text-gray-500">🔐 登入狀態確認中...</div>
   }
 
-  if (status === 'unauthenticated' && !publicPaths.includes(pathname)) {
-    return null
+  if (status === 'unauthenticated') {
+    return null // 避免誤顯示錯誤畫面
   }
 
   return <>{children}</>
