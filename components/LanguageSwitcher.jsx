@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 export default function LanguageSwitcher() {
   const router = useRouter();
   const pathname = usePathname();
-  const [locale, setLocale] = useState('zh-TW'); // 預設語言
+  const [locale, setLocale] = useState('zh-TW'); // 預設語言繁體中文
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
