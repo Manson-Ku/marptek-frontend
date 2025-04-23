@@ -26,17 +26,38 @@
     "goLogin": "Go to Login"
   },
   "Sidebar": {
-    "dashboard": "Dashboard",
-    "performance": "Performance",
-    "reviews": "Reviews",
-    "autoResponse": "Auto Response",
+    "summary": "Overview",
+
     "googleQA": "Google QA",
-    "locations": "Locations",
-    "competitors": "Competitors",
-    "manageLocations": "Manage Locations",
-    "posts": "Posts",
+    "reviews": "Review Management",
+    "autoResponse": "Auto Response",
+    "reviewInvite": "Invite Reviews",
+
+    "performance": "Performance Analysis",
+    "keyword": "Keyword Insights",
+
+    "postList": "Post List",
+    "postBatch": "Bulk Posting",
+    "postGenerator": "AI Post Generator",
+
+    "locationHealthCheck": "Location Health Check",
+    "basicInfoManagement": "Basic Information",
+    "propertyManagement": "Categories & Attributes",
+    "linkManagement": "Link Management",
     "imageManagement": "Image Management",
-    "reviewShowcase": "Review Showcase (Beta)"
+
+    "competitorsLocal": "Local Competitor Analysis",
+    "competitorsRegion": "Regional Competitor Analysis",
+
+    "localRank": "Local Ranking",
+    "localSeo": "Map SEO Optimization",
+
+    "section_reviews": "Reviews & QA",
+    "section_performance": "Performance",
+    "section_posts": "Post Management",
+    "section_locations": "Business Info",
+    "section_competitors": "Competitor Monitoring",
+    "section_ranking": "Ranking Optimization"
   },
   "Header": {
     "dashboard": "Dashboard"

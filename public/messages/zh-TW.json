@@ -26,17 +26,39 @@
     "goLogin": "前往登入"
   },
   "Sidebar": {
-    "dashboard": "儀表板",
-    "performance": "成效分析",
+    "summary": "總覽",
+
+    "googleQA": "Google QA",
     "reviews": "評論管理",
     "autoResponse": "自動回覆",
-    "googleQA": "Google QA",
-    "locations": "門市據點",
-    "competitors": "競爭者分析",
-    "manageLocations": "管理門市",
-    "posts": "貼文管理",
+    "reviewInvite": "邀請評論",
+
+    "performance": "成效分析",
+    "keyword": "熱門關鍵字",
+
+    "postList": "貼文清單",
+    "postBatch": "批次發布",
+    "postGenerator": "AI 貼文產生器",
+
+    "locationHealthCheck": "地點健檢",
+    "basicInfoManagement": "基本資訊",
+    "propertyManagement": "類別屬性",
+    "linkManagement": "連結管理",
     "imageManagement": "圖片管理",
-    "reviewShowcase": "評論展示（Beta）"
+
+    "competitorsLocal": "在地競品分析",
+    "competitorsRegion": "區域競品分析",
+
+    "localRank": "在地排名",
+    "localSeo": "地圖 SEO 優化",
+
+    "section_overview": "總覽",
+    "section_reviews": "評論與 QA",
+    "section_performance": "曝光成效",
+    "section_posts": "貼文管理",
+    "section_locations": "商家資料",
+    "section_competitors": "競品監測",
+    "section_ranking": "排名優化"
   },
   "Header": {
     "dashboard": "儀表板"
