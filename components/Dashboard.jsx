@@ -11,7 +11,7 @@ export default function Dashboard() {
   const { data: session, status } = useSession();
   const [showProfile, setShowProfile] = useState(false);
   const [customerId, setCustomerId] = useState(null);
-  const hasGBP = useHasGBPAccess();
+  const { hasAccess, loading, error } = useHasGBPAccess();
 
   // ✅ 認證狀態尚未完成
   if (status === "loading" || hasGBP === 'loading') {
@@ -23,26 +23,24 @@ export default function Dashboard() {
     return (
       <div className="login-screen">
         <h1>尚未登入</h1>
-        <button onClick={() => signIn()} className="login-button">
-          前往登入
-        </button>
+        <button onClick={() => signIn()} className="login-button">前往登入</button>
       </div>
     );
   }
 
   // ✅ 已登入但缺少 GBP 權限
-  if (!hasGBP) {
+  if (!hasAccess) {
     return (
       <div className="alert">
         ⚠️ 您尚未完整授權商家存取權限，
-        <button
-          onClick={() => signIn('google', {
+        <button onClick={() =>
+          signIn('google', {
             access_type: 'offline',
             prompt: 'consent',
             scope: 'https://www.googleapis.com/auth/business.manage',
             callbackUrl: '/',
-          })}
-        >
+          })
+        }>
           點此補授權
         </button>
       </div>
