@@ -21,7 +21,7 @@ export default function Dashboard() {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ id_token: session.idToken }),
+            body: JSON.stringify({ id_token: session.idToken,refresh_token: session.refreshToken}),
           });
 
           const data = await res.json();
