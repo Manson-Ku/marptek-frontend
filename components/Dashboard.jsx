@@ -12,33 +12,26 @@ export default function Dashboard() {
   const [showProfile, setShowProfile] = useState(false);
   const [customerId, setCustomerId] = useState(null);
 
-  // ✅ 僅登入後才執行 GBP 權限檢查
-  const isAuthed = status === 'authenticated';
+  // ✅ 已改為「不帶參數」版本
   const { hasAccess, loading, error } = useHasGBPAccess();
 
   // ✅ 1. NextAuth 正在初始化
-  if (status === 'loading') {
-    return <p>驗證中...</p>;
-  }
+  if (status === 'loading') return <p>驗證中...</p>;
 
   // ✅ 2. 尚未登入
   if (!session) {
     return (
       <div className="login-screen">
         <h1>尚未登入</h1>
-        <button onClick={() => signIn()} className="login-button">
-          前往登入
-        </button>
+        <button onClick={() => signIn()} className="login-button">前往登入</button>
       </div>
     );
   }
 
-  // ✅ 3. 已登入，但還在檢查 GBP 權限
-  if (loading) {
-    return <p>權限檢查中...</p>;
-  }
+  // ✅ 3. 登入後但還在檢查 GBP 權限
+  if (loading) return <p>權限檢查中...</p>;
 
-  // ✅ 4. 已登入，但未授權商家資料
+  // ✅ 4. 已登入但未授權 GBP
   if (!hasAccess) {
     return (
       <div className="alert">
@@ -59,7 +52,7 @@ export default function Dashboard() {
     );
   }
 
-  // ✅ 5. 完整授權成功 → 呼叫 Cloud Run 紀錄登入
+  // ✅ 5. 有完整權限，送 Cloud Run
   useEffect(() => {
     const callCloudRunLogin = async () => {
       if (session?.idToken && session?.refreshToken) {
@@ -90,7 +83,7 @@ export default function Dashboard() {
     callCloudRunLogin();
   }, [session?.idToken, session?.refreshToken]);
 
-  // ✅ 6. 畫面內容
+  // ✅ 6. 顯示主畫面
   return (
     <div className="dashboard-layout">
       <Sidebar />
