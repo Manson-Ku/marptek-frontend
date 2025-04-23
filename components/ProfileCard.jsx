@@ -1,20 +1,45 @@
-'use client';
+'use client'
 
-import { useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl'
 
 export default function ProfileCard({ session, onLogout }) {
-  const t = useTranslations('Profile');
+  const t = useTranslations('Profile')
 
   return (
     <div className="profile-card">
-      <div className="profile-avatar" />
+      {session.user?.image ? (
+        <img
+          src={session.user.image}
+          alt="Avatar"
+          className="profile-avatar"
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            objectFit: 'cover',
+            marginBottom: '1rem',
+          }}
+        />
+      ) : (
+        <div className="profile-avatar" />
+      )}
+
       <h3 className="profile-name">{session.user.name}</h3>
       <p className="profile-email">{session.user.email}</p>
 
-      {/* ✅ 判斷有無 refreshToken */}
       {session.refreshToken ? (
-        <div style={{ wordBreak: 'break-all', fontSize: '0.75rem', color: '#666', marginTop: '1rem', textAlign: 'center' }}>
-          <div><strong>Refresh Token</strong></div>
+        <div
+          style={{
+            wordBreak: 'break-all',
+            fontSize: '0.75rem',
+            color: '#666',
+            marginTop: '1rem',
+            textAlign: 'center',
+          }}
+        >
+          <div>
+            <strong>Refresh Token</strong>
+          </div>
           <div>{session.refreshToken}</div>
         </div>
       ) : (
@@ -29,7 +54,7 @@ export default function ProfileCard({ session, onLogout }) {
             border: 'none',
             cursor: 'not-allowed',
             width: '100%',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
           }}
         >
           {t('startManagingGBP')}
@@ -40,5 +65,5 @@ export default function ProfileCard({ session, onLogout }) {
         {t('logout')}
       </button>
     </div>
-  );
+  )
 }
