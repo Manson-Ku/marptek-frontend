@@ -308,22 +308,119 @@
     z-index: 1; /* 🟢 內容層在最上 */
   }
   
-  .sidebar-section-title {
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-  }
-  .sidebar-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    color: white;
-    border-radius: 0.375rem;
-    text-decoration: none;
-  }
-  .sidebar-link:hover {
-    background: #334155;
-  }
+/* ========================
+   📁 Sidebar 結構與樣式統一區
+   ======================== */
+
+/* 📦 Sidebar 外層容器：三等分區塊設計 */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #1e293b;
+  color: white;
+  padding: 10px;
+}
+
+/* Top 固定 Logo 區 */
+.sidebar-top {
+  flex-shrink: 0;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Middle 滿版撐開，自動 scroll */
+.sidebar-middle {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 4px; /* 為 scrollbar 預留空間避免壓字 */
+  margin-bottom: 10px;
+}
+
+/* Bottom 固定設定 icon 區 */
+.sidebar-bottom {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 🔠 分區標題 */
+.sidebar-section-title {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 1.25rem 0 0.5rem;
+  padding-left: 0.75rem;
+}
+
+/* 📄 功能列連結樣式 */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.375rem;
+  color: #f1f5f9;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  transition: all 0.2s ease;
+}
+
+/* 🖱 Hover 效果 */
+.sidebar-link:hover {
+  background-color: #334155;
+  color: #ffffff;
+}
+
+/* 🎯 Icon 樣式微調（hover 加亮） */
+.sidebar-link svg {
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+.sidebar-link:hover svg {
+  opacity: 1;
+}
+
+/* ⚙️ 設定 icon 樣式（圓形按鈕） */
+/* ⚙️ 設定 icon 區（第三區專用） */
+.sidebar-settings-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  background: #0f172a; /* 🧱 不同於主選單區的深色 */
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3); /* 微陰影讓它浮出來 */
+}
+
+.sidebar-settings-icon:hover {
+  background: #334155;
+  color: #ffffff;
+}
+
+.sidebar-settings-icon svg {
+  width: 22px;
+  height: 22px;
+}
+/* ✅ 高亮顯示當前選單 */
+.sidebar-link.active {
+  background-color: #475569; /* 深色底 */
+  color: #ffffff;
+}
+
+.sidebar-link.active svg {
+  opacity: 1;
+}
+
+
+  
+  
   
