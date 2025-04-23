@@ -10,8 +10,8 @@ const handler = NextAuth({
         params: {
           scope: 'openid email profile https://www.googleapis.com/auth/business.manage',
           access_type: 'offline',
-          //prompt: 'consent',
-          prompt: 'select_account',
+          prompt: 'consent',
+          //prompt: 'select_account',
         },
       },
     })
