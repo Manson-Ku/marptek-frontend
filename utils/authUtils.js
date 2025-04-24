@@ -1,8 +1,6 @@
 import { signIn } from 'next-auth/react';
 
-export const smartSignIn = async (session) => {
-  const isFirstLogin = !session?.refreshToken;
-
+export const smartSignIn = async (isFirstLogin = true) => {
   await signIn('google', {
     callbackUrl: '/',
     access_type: 'offline',

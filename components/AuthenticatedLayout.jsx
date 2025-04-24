@@ -11,6 +11,7 @@ export default function AuthenticatedLayout({ children }) {
   const { data: session } = useSession()
   const [showProfile, setShowProfile] = useState(false)
   const [customerId, setCustomerId] = useState(null)
+  const [hasGBPGranted, setHasGBPGranted] = useState(false) // ⬅️ 新增這行
   const { hasAccess, loading } = useHasGBPAccess()
 
   useEffect(() => {
@@ -27,6 +28,9 @@ export default function AuthenticatedLayout({ children }) {
         .then(data => {
           if (data?.user?.customer_id) {
             setCustomerId(data.user.customer_id)
+          }
+          if (data?.hasGBPGranted !== undefined) {
+            setHasGBPGranted(data.hasGBPGranted) // ⬅️ 擷取授權狀態
           }
         })
         .catch(err => console.error('❌ Cloud Run error:', err))
@@ -70,6 +74,8 @@ export default function AuthenticatedLayout({ children }) {
           {customerId && (
             <div className="dashboard-banner mb-4">
               🎉 歡迎你，客戶代碼：<strong>{customerId}</strong>
+              {/* 🧠 可視需要顯示 hasGBPGranted */}
+              {/* <div className="text-sm text-gray-400">GBP授權狀態: {hasGBPGranted ? '✅ 已授權' : '⚠️ 未授權'}</div> */}
             </div>
           )}
           {children}

@@ -24,44 +24,58 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    await smartSignIn(session);
+
+    let isFirstLogin = true;
+
+    if (session?.idToken) {
+      try {
+        const res = await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_token: session.idToken }),
+        });
+
+        const data = await res.json();
+        isFirstLogin = !data.hasGBPGranted;
+      } catch (err) {
+        console.warn('⚠️ 無法確認是否授權過 GBP，預設為首次登入', err);
+      }
+    }
+
+    await smartSignIn(isFirstLogin);
     setLoading(false);
   };
 
   return (
-  <NextIntlClientProvider locale={locale} messages={messages}>
-    <div className="login-container">
-      
-      {/* ✅ 背景影片：放 login-wrapper 前，並放在 container 最上層 */}
-      <video
-        className="login-bg-video"
-        src="/login_bg_video.mp4"
-        autoPlay
-        muted
-        loop
-        playsInline
-      ></video>
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      <div className="login-container">
+        <video
+          className="login-bg-video"
+          src="/login_bg_video.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+        ></video>
 
-      <div className="login-wrapper">
-        <div className="login-box">
-          <h1 className="login-title">{t('title')}</h1>
-          {error && <div className="login-error">{t('loginError')}</div>}
-          <button
-            onClick={handleGoogleLogin}
-            className="google-button"
-            disabled={loading}
-          >
-            {loading ? t('loggingIn') : t('signInWithGoogle')}
-          </button>
-        </div>
+        <div className="login-wrapper">
+          <div className="login-box">
+            <h1 className="login-title">{t('title')}</h1>
+            {error && <div className="login-error">{t('loginError')}</div>}
+            <button
+              onClick={handleGoogleLogin}
+              className="google-button"
+              disabled={loading}
+            >
+              {loading ? t('loggingIn') : t('signInWithGoogle')}
+            </button>
+          </div>
 
-        <div className="language-switcher-container">
-          <LanguageSwitcher />
+          <div className="language-switcher-container">
+            <LanguageSwitcher />
+          </div>
         </div>
       </div>
-    </div>
-  </NextIntlClientProvider>
-    );
+    </NextIntlClientProvider>
+  );
 }
-
-
