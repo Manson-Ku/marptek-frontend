@@ -361,6 +361,7 @@
     width: 22px;
     height: 22px;
   }
+  
   .sidebar-link.active {
     background-color: #475569;
     color: #ffffff;
