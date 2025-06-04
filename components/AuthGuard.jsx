@@ -9,7 +9,9 @@ export default function AuthGuard({ children }) {
   // 若未登入，自動跳轉 Google 登入
   useEffect(() => {
     if (status === 'unauthenticated') {
-      signIn('google')
+      signIn('google', {
+        prompt: 'select_account',
+      })
     }
   }, [status])
 

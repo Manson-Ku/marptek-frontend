@@ -1,7 +1,6 @@
 'use client';
 
 import { NextIntlClientProvider, useMessages, useLocale } from 'next-intl';
-import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -12,37 +11,14 @@ export default function LoginPage() {
   const messages = useMessages();
   const locale = useLocale();
   const t = useTranslations('Login');
-  const { status, data: session } = useSession();
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
 
   const [loading, setLoading] = useState(false);
 
-  if (status === "loading") {
-    return <p>{t('loading')}</p>;
-  }
-
   const handleGoogleLogin = async () => {
     setLoading(true);
-
-    let isFirstLogin = true;
-
-    if (session?.idToken) {
-      try {
-        const res = await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id_token: session.idToken }),
-        });
-
-        const data = await res.json();
-        isFirstLogin = !data.hasGBPGranted;
-      } catch (err) {
-        console.warn('⚠️ 無法確認是否授權過 GBP，預設為首次登入', err);
-      }
-    }
-
-    await smartSignIn(isFirstLogin);
+    await smartSignIn();
     setLoading(false);
   };
 

@@ -8,10 +8,9 @@ const handler = NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       authorization: {
         params: {
-          scope: 'openid email profile https://www.googleapis.com/auth/business.manage',
-          access_type: 'offline',
-          prompt: 'consent',
-          //prompt: 'select_account',
+          scope: 'openid email profile',  // 不要加 business.manage
+          access_type: 'online',           // 甚至可以省略，預設 online
+          prompt: 'select_account',
         },
       },
     })

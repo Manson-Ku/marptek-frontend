@@ -8,20 +8,19 @@ import ProfileCard from './ProfileCard'
 import { useHasGBPAccess } from '@/hooks/useHasGBPAccess'
 
 export default function Dashboard() {
-  const { data: session } = useSession()                            // 不再處理 status
+  const { data: session } = useSession()
   const [showProfile, setShowProfile] = useState(false)
   const [customerId, setCustomerId] = useState(null)
   const { hasAccess, loading } = useHasGBPAccess()
 
-  // 呼叫 Cloud Run API 寫入登入記錄
+  // 只送 id_token，refresh_token 交給第二階段
   useEffect(() => {
-    if (session?.idToken && session?.refreshToken) {
+    if (session?.idToken) {
       fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id_token: session.idToken,
-          refresh_token: session.refreshToken
+          id_token: session.idToken
         }),
       })
         .then(res => res.json())
@@ -32,9 +31,9 @@ export default function Dashboard() {
         })
         .catch(err => console.error('❌ Cloud Run error:', err))
     }
-  }, [session?.idToken, session?.refreshToken])
+  }, [session?.idToken])
 
-  // ✅ 商家權限尚未確認完成（包含 loading 中 或 hasAccess 尚未決定）
+  // loading階段顯示
   if (loading || hasAccess === null) {
     return (
       <div style={{
@@ -51,27 +50,32 @@ export default function Dashboard() {
       </div>
     )
   }
-  
 
-  // ❌ 已確定為未授權，顯示提示 UI
+  // ❌ 尚未授權，提供「授權按鈕」
   if (!hasAccess) {
+    const handleConsent = () => {
+      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+      const redirectUri = process.env.NEXT_PUBLIC_GBP_CALLBACK_URL  // 你要在 .env 裡配置
+      const scope = 'https://www.googleapis.com/auth/business.manage'
+
+      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&prompt=consent&scope=${encodeURIComponent(scope)}`
+
+      window.location.href = url
+    }
+
     return (
       <div className="alert p-6 text-red-500 text-center">
         ⚠️ 您尚未完整授權商家存取權限，
-        <button
-          className="ml-2 underline text-blue-600"
-          onClick={() =>
-            signOut({
-              callbackUrl: '/login',
-            })
-          }
-        >
-          點此補授權
+        <button className="ml-2 underline text-blue-600" onClick={handleConsent}>
+          點此完成授權
+        </button>
+        <br />
+        <button className="mt-4 text-sm text-gray-500 underline" onClick={() => signOut({ callbackUrl: '/login' })}>
+          重新登入
         </button>
       </div>
     )
   }
-
 
   // ✅ 主畫面
   return (
@@ -81,10 +85,7 @@ export default function Dashboard() {
         <Header onProfileClick={() => setShowProfile(!showProfile)} />
         {showProfile && (
           <div className="profile-card-container">
-            <ProfileCard
-              session={session}
-              onLogout={() => signOut({ callbackUrl: '/login' })}
-            />
+            <ProfileCard session={session} onLogout={() => signOut({ callbackUrl: '/login' })} />
           </div>
         )}
         <main className="dashboard-content">

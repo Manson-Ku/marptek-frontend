@@ -5,36 +5,24 @@ import { useSession } from 'next-auth/react'
 
 export function useHasGBPAccess() {
   const { data: session, status } = useSession()
-
-  // ✅ 初始狀態直接從 sessionStorage 判斷
-  const cachedAccess = typeof window !== 'undefined'
-    ? sessionStorage.getItem('hasGBPAccess')
-    : null
-
-  const [hasAccess, setHasAccess] = useState(
-    cachedAccess === 'true' ? true : cachedAccess === 'false' ? false : null
-  )
-  const [loading, setLoading] = useState(cachedAccess === null)
+  const [hasAccess, setHasAccess] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (status !== 'authenticated' || !session?.accessToken || cachedAccess !== null) return
+    if (status !== 'authenticated' || !session?.idToken) return
 
-    const verifyAccess = async () => {
+    const checkAccess = async () => {
       setLoading(true)
       try {
-        const res = await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts', {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
+        const res = await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/check-gbp-access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_token: session.idToken }),
         })
 
-        const result = await res.json()
-        const isAuthorized = res.ok && Array.isArray(result?.accounts) && result.accounts.length > 0
-
-        sessionStorage.setItem('hasGBPAccess', isAuthorized ? 'true' : 'false')
-        setHasAccess(isAuthorized)
+        const data = await res.json()
+        setHasAccess(data.hasGBPGranted)
       } catch (err) {
         console.error('🔍 GBP 權限檢查失敗:', err)
         setError(err.message)
@@ -44,8 +32,8 @@ export function useHasGBPAccess() {
       }
     }
 
-    verifyAccess()
-  }, [session?.accessToken, status, cachedAccess])
+    checkAccess()
+  }, [session?.idToken, status])
 
   return { hasAccess, loading, error }
 }
