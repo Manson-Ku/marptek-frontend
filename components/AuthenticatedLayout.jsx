@@ -45,7 +45,7 @@ export default function AuthenticatedLayout({ children }) {
     const handleConsent = () => {
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
       const redirectUri = process.env.NEXT_PUBLIC_GBP_CALLBACK_URL
-      const scope = 'https://www.googleapis.com/auth/business.manage'
+      const scope = 'openid email profile https://www.googleapis.com/auth/business.manage';
 
       const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&prompt=consent&scope=${encodeURIComponent(scope)}`
       window.location.href = url
