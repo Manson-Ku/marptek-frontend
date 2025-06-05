@@ -9,21 +9,28 @@ export default function OAuthCallback() {
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const [error, setError] = useState(null);
+  const [exchanged, setExchanged] = useState(false);  // ✅ 避免重複觸發
 
   useEffect(() => {
     const code = searchParams.get('code');
 
-    // ✅ 只在 /oauth-callback 頁面執行，不會影響其他頁面
+    // ✅ 僅當 /oauth-callback?code=xxx 存在時執行
     if (!code) {
-      return;  // 沒有 code 表示根本不是 callback 頁面，不執行
+      return;
     }
 
+    // ✅ 等待 session hydrate 完成
     if (status === 'loading') {
       return;
     }
 
     if (!session?.idToken) {
       setError('未登入');
+      return;
+    }
+
+    // ✅ 避免重複執行
+    if (exchanged) {
       return;
     }
 
@@ -57,6 +64,7 @@ export default function OAuthCallback() {
           }),
         });
 
+        setExchanged(true);
         router.replace('/');
       } catch (err) {
         console.error('二階段授權錯誤', err);
@@ -65,7 +73,7 @@ export default function OAuthCallback() {
     };
 
     exchangeTokens();
-  }, [searchParams, router, session, status]);
+  }, [searchParams, router, session, status, exchanged]);
 
   if (error) {
     return <div className="p-6 text-center text-red-500">⚠️ {error}</div>;
