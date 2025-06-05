@@ -2,23 +2,23 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';  // ✅ 這裡要記得引入
 
 export default function OAuthCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();  // ✅ 取用一階段登入的 session
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const code = searchParams.get('code');
-
-    if (!code) {
-      setError('缺少 code');
+    if (!code || !session?.idToken) {
+      setError('缺少 code 或未登入');
       return;
     }
 
     const exchangeTokens = async () => {
       try {
-        // 前端直接兌換 refresh_token
         const res = await fetch('https://oauth2.googleapis.com/token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -38,12 +38,12 @@ export default function OAuthCallback() {
           throw new Error('兌換 refresh_token 失敗');
         }
 
-        // 直接拿 Google OAuth response 裡面的 id_token + refresh_token 傳給後端
+        // ✅ 這裡改成用 session.idToken
         await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id_token: tokenData.id_token,  // <-- 直接用 Google 回傳 id_token
+            id_token: session.idToken,
             refresh_token: tokenData.refresh_token,
           }),
         });
@@ -56,7 +56,7 @@ export default function OAuthCallback() {
     };
 
     exchangeTokens();
-  }, [searchParams, router]);
+  }, [searchParams, router, session]);
 
   if (error) {
     return <div className="p-6 text-center text-red-500">⚠️ {error}</div>;
