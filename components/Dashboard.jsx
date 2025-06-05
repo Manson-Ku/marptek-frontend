@@ -55,7 +55,7 @@ export default function Dashboard() {
   if (!hasAccess) {
     const handleConsent = () => {
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-      const redirectUri = process.env.NEXT_PUBLIC_GBP_CALLBACK_URL  // 你要在 .env 裡配置
+      const redirectUri = process.env.NEXT_PUBLIC_GBP_CALLBACK_URL  // 要在 .env 裡配置
       const scope = 'https://www.googleapis.com/auth/business.manage'
 
       const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&prompt=consent&scope=${encodeURIComponent(scope)}`
