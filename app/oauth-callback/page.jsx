@@ -7,24 +7,21 @@ import { useSession } from 'next-auth/react';
 export default function OAuthCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, status } = useSession();  // ✅ 取用一階段登入的 session + status
+  const { data: session, status } = useSession();
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const code = searchParams.get('code');
 
-    // ✅ 先確認 code 存在
+    // ✅ 只在 /oauth-callback 頁面執行，不會影響其他頁面
     if (!code) {
-      setError('缺少 code');
+      return;  // 沒有 code 表示根本不是 callback 頁面，不執行
+    }
+
+    if (status === 'loading') {
       return;
     }
 
-    // ✅ 等待 session 完成 hydration
-    if (status === 'loading') {
-      return;  // 先暫停執行
-    }
-
-    // ✅ 確保 session 存在
     if (!session?.idToken) {
       setError('未登入');
       return;
