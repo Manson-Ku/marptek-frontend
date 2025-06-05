@@ -1,11 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function OAuthCallback() {
-  const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState(null);
@@ -13,8 +11,8 @@ export default function OAuthCallback() {
   useEffect(() => {
     const code = searchParams.get('code');
 
-    if (!code || !session?.idToken) {
-      setError('缺少 code 或 id_token');
+    if (!code) {
+      setError('缺少 code');
       return;
     }
 
@@ -35,16 +33,16 @@ export default function OAuthCallback() {
 
         const tokenData = await res.json();
 
-        if (!tokenData.refresh_token) {
+        if (!tokenData.refresh_token || !tokenData.id_token) {
           throw new Error('兌換 refresh_token 失敗');
         }
 
-        // 將 id_token 與 refresh_token 送回後端 login
+        // 直接拿 Google OAuth response 裡面的 id_token + refresh_token 傳給後端
         await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id_token: session.idToken,
+            id_token: tokenData.id_token,  // <-- 直接用 Google 回傳 id_token
             refresh_token: tokenData.refresh_token,
           }),
         });
@@ -57,7 +55,7 @@ export default function OAuthCallback() {
     };
 
     exchangeTokens();
-  }, [searchParams, session, router]);
+  }, [searchParams, router]);
 
   if (error) {
     return <div className="p-6 text-center text-red-500">⚠️ {error}</div>;
