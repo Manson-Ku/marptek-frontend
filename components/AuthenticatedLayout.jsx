@@ -43,13 +43,21 @@ export default function AuthenticatedLayout({ children }) {
 
   if (!hasAccess) {
     const handleConsent = () => {
-      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-      const redirectUri = process.env.NEXT_PUBLIC_GBP_CALLBACK_URL
-      const scope = 'openid email profile https://www.googleapis.com/auth/business.manage';
+      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+      const redirectUri = process.env.NEXT_PUBLIC_GBP_CALLBACK_URL;
 
-      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&prompt=consent&scope=${encodeURIComponent(scope)}`
-      window.location.href = url
-    }
+      const scopes = [
+        'openid',
+        'email',
+        'profile',
+        'https://www.googleapis.com/auth/business.manage'
+      ];
+      const scopeParam = scopes.join(' ');
+
+      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&prompt=consent&scope=${encodeURIComponent(scopeParam)}`;
+
+      window.location.href = url;
+    };
 
     return (
       <div className="alert p-6 text-red-500 text-center">
