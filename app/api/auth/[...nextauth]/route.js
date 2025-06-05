@@ -8,7 +8,7 @@ const handler = NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       authorization: {
         params: {
-          scope: 'openid email profile',  // 不要加 business.manage
+          scope: 'openid email profile',  // 不要加business.manage
           access_type: 'online',           // 甚至可以省略，預設 online
           prompt: 'select_account',
         },
