@@ -2,18 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useSession } from 'next-auth/react';  // ✅ 這裡要記得引入
+import { useSession } from 'next-auth/react';
 
 export default function OAuthCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();  // ✅ 取用一階段登入的 session
+  const { data: session, status } = useSession();  // ✅ 取用一階段登入的 session + status
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const code = searchParams.get('code');
-    if (!code || !session?.idToken) {
-      setError('缺少 code 或未登入');
+
+    // ✅ 先確認 code 存在
+    if (!code) {
+      setError('缺少 code');
+      return;
+    }
+
+    // ✅ 等待 session 完成 hydration
+    if (status === 'loading') {
+      return;  // 先暫停執行
+    }
+
+    // ✅ 確保 session 存在
+    if (!session?.idToken) {
+      setError('未登入');
       return;
     }
 
@@ -38,7 +51,6 @@ export default function OAuthCallback() {
           throw new Error('兌換 refresh_token 失敗');
         }
 
-        // ✅ 這裡改成用 session.idToken
         await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -56,7 +68,7 @@ export default function OAuthCallback() {
     };
 
     exchangeTokens();
-  }, [searchParams, router, session]);
+  }, [searchParams, router, session, status]);
 
   if (error) {
     return <div className="p-6 text-center text-red-500">⚠️ {error}</div>;
