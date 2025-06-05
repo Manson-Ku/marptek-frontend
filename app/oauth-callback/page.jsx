@@ -32,6 +32,7 @@ export default function OAuthCallback() {
         });
 
         const tokenData = await res.json();
+        console.log('tokenData:', tokenData);
 
         if (!tokenData.refresh_token || !tokenData.id_token) {
           throw new Error('兌換 refresh_token 失敗');
