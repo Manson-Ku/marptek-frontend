@@ -1,97 +1,72 @@
-'use client'
+'use client';
 
-import { useSession, signOut } from 'next-auth/react'
-import { useState, useEffect } from 'react'
-import Sidebar from './Sidebar'
-import Header from './Header'
-import ProfileCard from './ProfileCard'
-import { useHasGBPAccess } from '@/hooks/useHasGBPAccess'
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
-export default function AuthenticatedLayout({ children }) {
-  const { data: session } = useSession()
-  const [showProfile, setShowProfile] = useState(false)
-  const [customerId, setCustomerId] = useState(null)
-  const { hasAccess, loading } = useHasGBPAccess()
+export default function OAuthCallback() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (session?.idToken) {
-      fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id_token: session.idToken
-        }),
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data?.user?.customer_id) {
-            setCustomerId(data.user.customer_id)
-          }
-        })
-        .catch(err => console.error('❌ Cloud Run error:', err))
+    const code = searchParams.get('code');
+    if (!code || !session?.idToken) {
+      setError('缺少 code 或未登入');
+      return;
     }
-  }, [session?.idToken])
 
-  if (loading || hasAccess === null) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-screen text-gray-500">
-        <img src="/spinner.svg" width={48} className="mb-4" />
-        <p>正在確認您的商家權限，請稍候...</p>
-      </div>
-    )
-  }
+    const exchangeTokens = async () => {
+      try {
+        const res = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            code: code,
+            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+            client_secret: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET,
+            redirect_uri: process.env.NEXT_PUBLIC_GBP_CALLBACK_URL,
+            grant_type: 'authorization_code',
+          }),
+        });
 
-  if (!hasAccess) {
-    const handleConsent = () => {
-      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-      const redirectUri = process.env.NEXT_PUBLIC_GBP_CALLBACK_URL;
+        const tokenData = await res.json();
 
-      const scopes = [
-        'openid',
-        'email',
-        'profile',
-        'https://www.googleapis.com/auth/business.manage'
-      ];
-      const scopeParam = scopes.join(' ');
+        console.log('tokenData:', tokenData);
 
-      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&prompt=consent&scope=${encodeURIComponent(scopeParam)}`;
+        if (!tokenData.refresh_token) {
+          throw new Error('兌換 refresh_token 失敗');
+        }
 
-      window.location.href = url;
+        // 仍然使用一階段登入時取得的 idToken
+        await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id_token: session.idToken,
+            refresh_token: tokenData.refresh_token,
+          }),
+        });
+
+        router.replace('/');
+      } catch (err) {
+        console.error('二階段授權錯誤', err);
+        setError('二階段授權失敗');
+      }
     };
 
-    return (
-      <div className="alert p-6 text-red-500 text-center">
-        ⚠️ 您尚未完整授權商家存取權限，
-        <button className="ml-2 underline text-blue-600" onClick={handleConsent}>
-          點此完成授權
-        </button>
-        <br />
-        <button className="mt-4 text-sm text-gray-500 underline" onClick={() => signOut({ callbackUrl: '/login' })}>
-          重新登入
-        </button>
-      </div>
-    )
+    exchangeTokens();
+  }, [searchParams, router, session]);
+
+  if (error) {
+    return <div className="p-6 text-center text-red-500">⚠️ {error}</div>;
   }
 
   return (
-    <div className="dashboard-layout">
-      <Sidebar />
-      <div className="dashboard-main">
-        <Header onProfileClick={() => setShowProfile(!showProfile)} />
-        {showProfile && (
-          <div className="profile-card-container">
-            <ProfileCard session={session} onLogout={() => signOut({ callbackUrl: '/login' })} />
-          </div>
-        )}
-        <main className="dashboard-content">
-          {customerId && (
-            <div className="dashboard-banner mb-4">
-              🎉 歡迎你，客戶代碼：<strong>{customerId}</strong>
-            </div>
-          )}
-          {children}
-        </main>
-      </div>
+    <div className="flex flex-col justify-center items-center min-h-screen text-gray-500">
+      <img src="/spinner.svg" width={48} className="mb-4" />
+      <p>正在完成授權流程，請稍候...</p>
     </div>
-  )
+  );
 }
