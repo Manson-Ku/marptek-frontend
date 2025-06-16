@@ -10,34 +10,29 @@ export function useHasGBPAccess() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (status !== 'authenticated' || !session?.idToken) return
-
-    const cached = sessionStorage.getItem('hasGBPAccess')
-    if (cached === 'true') {
-      setHasAccess(true)
-      setLoading(false)
-      return
-    } else if (cached === 'false') {
+    if (status === 'loading') return
+    if (status !== 'authenticated' || !session?.idToken) {
       setHasAccess(false)
       setLoading(false)
       return
     }
 
-    const fetchAccess = async () => {
+    const checkAccess = async () => {
       try {
         const res = await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/check-gbp-access', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id_token: session.idToken }),
         })
+        const data = await res.json()
 
-        const result = await res.json()
-        const isGranted = result?.hasGBPGranted === true
-
-        sessionStorage.setItem('hasGBPAccess', isGranted ? 'true' : 'false')
-        setHasAccess(isGranted)
+        if (res.ok && data.hasGBPGranted === true) {
+          setHasAccess(true)
+        } else {
+          setHasAccess(false)
+        }
       } catch (err) {
-        console.error('🔍 check-gbp-access 錯誤:', err)
+        console.error('❌ 檢查權限失敗:', err)
         setError(err.message)
         setHasAccess(false)
       } finally {
@@ -45,7 +40,7 @@ export function useHasGBPAccess() {
       }
     }
 
-    fetchAccess()
+    checkAccess()
   }, [status, session?.idToken])
 
   return { hasAccess, loading, error }
