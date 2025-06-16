@@ -5,48 +5,48 @@ import { useSession } from 'next-auth/react'
 
 export function useHasGBPAccess() {
   const { data: session, status } = useSession()
-
-  // ✅ 初始狀態從 sessionStorage 取快取
-  const cachedAccess = typeof window !== 'undefined'
-    ? sessionStorage.getItem('hasGBPAccess')
-    : null
-
-  const [hasAccess, setHasAccess] = useState(
-    cachedAccess === 'true' ? true : cachedAccess === 'false' ? false : null
-  )
-  const [loading, setLoading] = useState(cachedAccess === null)
+  const [hasAccess, setHasAccess] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     if (status === 'loading') return
-    if (status !== 'authenticated' || !session?.idToken || cachedAccess !== null) return
+    if (status !== 'authenticated' || !session?.idToken) {
+      setHasAccess(false)
+      setLoading(false)
+      return
+    }
 
-    const timer = setTimeout(async () => {
-      try {
-        setLoading(true)
+    const timer = setTimeout(() => {
+      const checkAccess = async () => {
+        try {
+          const res = await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/check-gbp-access', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_token: session.idToken }),
+          })
 
-        const res = await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id_token: session.idToken }),
-        })
+          const data = await res.json()
 
-        const data = await res.json()
-        const isAuthorized = !!data?.user?.refresh_token
-
-        sessionStorage.setItem('hasGBPAccess', isAuthorized ? 'true' : 'false')
-        setHasAccess(isAuthorized)
-      } catch (err) {
-        console.error('🔍 GBP 權限檢查失敗:', err)
-        setError(err.message)
-        setHasAccess(false)
-      } finally {
-        setLoading(false)
+          if (res.ok && data.hasGBPGranted === true) {
+            setHasAccess(true)
+          } else {
+            setHasAccess(false)
+          }
+        } catch (err) {
+          console.error('❌ 檢查權限失敗:', err)
+          setError(err.message)
+          setHasAccess(false)
+        } finally {
+          setLoading(false)
+        }
       }
-    }, 2000) // ✅ 延遲 2000ms 再執行
 
-    return () => clearTimeout(timer)
-  }, [session?.idToken, status, cachedAccess])
+      checkAccess()
+    }, 500) // ✅ 延遲 500 毫秒再執行
+
+    return () => clearTimeout(timer)  // 清除計時器避免 memory leak
+  }, [status, session?.idToken])
 
   return { hasAccess, loading, error }
 }

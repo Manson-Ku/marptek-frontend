@@ -12,8 +12,10 @@ export default function AuthenticatedLayout({ children }) {
   const [showProfile, setShowProfile] = useState(false);
   const { hasAccess, loading } = useHasGBPAccess();
 
-  // 🔄 授權狀態尚未完成時顯示 loading 畫面
-  if (status === 'loading' || loading || hasAccess === null) {
+  // ✅ 判斷是否仍在登入或檢查授權中
+  const isAuthenticating = status === 'loading' || loading || hasAccess === null;
+
+  if (isAuthenticating) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen text-gray-500">
         <img src="/spinner.svg" width={48} className="mb-4" />
