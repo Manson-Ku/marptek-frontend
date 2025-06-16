@@ -11,10 +11,11 @@ export default function AuthenticatedLayout({ children }) {
   const { data: session, status } = useSession();
   const [showProfile, setShowProfile] = useState(false);
   const [customerId, setCustomerId] = useState(null);
-  const [accessVersion, setAccessVersion] = useState(0); // 🔁 觸發權限檢查
-  const { hasAccess, loading } = useHasGBPAccess(accessVersion);
+  const [accessReady, setAccessReady] = useState(false); // ✅ login 完成再觸發權限查詢
 
-  // ✅ 每次登入時觸發後端 login 並刷新權限狀態
+  // ✅ login 完成後才觸發 useHasGBPAccess
+  const { hasAccess, loading } = useHasGBPAccess(accessReady);
+
   useEffect(() => {
     if (session?.idToken) {
       fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
@@ -26,14 +27,17 @@ export default function AuthenticatedLayout({ children }) {
         .then(data => {
           if (data?.user?.customer_id) {
             setCustomerId(data.user.customer_id);
-            setAccessVersion(v => v + 1); // 🔁 觸發 GBP 權限重新檢查
+            setAccessReady(true); // ✅ login 完成才查權限
           }
         })
-        .catch(err => console.error('❌ Cloud Run error:', err));
+        .catch(err => {
+          console.error('❌ Cloud Run error:', err);
+          setAccessReady(true); // 即使錯誤也避免卡死
+        });
     }
   }, [session?.idToken]);
 
-  // 🔄 尚未完成檢查時顯示 loading 畫面
+  // ⏳ 等待 session 或權限
   if (status === 'loading' || loading || hasAccess === null) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen text-gray-500">
@@ -43,7 +47,7 @@ export default function AuthenticatedLayout({ children }) {
     );
   }
 
-  // ❌ 尚未授權 GBP 權限時顯示提示畫面
+  // ❌ 尚未授權 GBP
   if (!hasAccess) {
     const handleConsent = () => {
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -67,7 +71,7 @@ export default function AuthenticatedLayout({ children }) {
     );
   }
 
-  // ✅ 授權成功後顯示主畫面內容
+  // ✅ 授權成功後顯示主畫面
   return (
     <div className="dashboard-layout">
       <Sidebar />

@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 
-export function useHasGBPAccess() {
+export function useHasGBPAccess(enabled = true) {
   const { data: session, status } = useSession()
   const [hasAccess, setHasAccess] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    if (!enabled) return            // ✅ 沒有啟用時不查詢
     if (status === 'loading') return
     if (status !== 'authenticated' || !session?.idToken) {
       setHasAccess(false)
@@ -43,10 +44,10 @@ export function useHasGBPAccess() {
       }
 
       checkAccess()
-    }, 500) // ✅ 延遲 500 毫秒再執行
+    }, 500)
 
-    return () => clearTimeout(timer)  // 清除計時器避免 memory leak
-  }, [status, session?.idToken])
+    return () => clearTimeout(timer)
+  }, [status, session?.idToken, enabled])
 
   return { hasAccess, loading, error }
 }
