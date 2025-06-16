@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import ProfileCard from './ProfileCard';
@@ -10,30 +10,10 @@ import { useHasGBPAccess } from '@/hooks/useHasGBPAccess';
 export default function AuthenticatedLayout({ children }) {
   const { data: session, status } = useSession();
   const [showProfile, setShowProfile] = useState(false);
-  const [customerId, setCustomerId] = useState(null);
-  const { hasAccess, loading, error } = useHasGBPAccess();
+  const { hasAccess, loading } = useHasGBPAccess();
 
-  useEffect(() => {
-    // ✅ 等待 session 完成且已登入，再查詢使用者資訊
-    if (status !== 'authenticated' || !session?.idToken) return;
-
-    fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id_token: session.idToken }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data?.user?.customer_id) {
-          setCustomerId(data.user.customer_id);
-        }
-      })
-      .catch(err => {
-        console.error('❌ Cloud Run error:', err);
-      });
-  }, [session?.idToken, status]);
-
-  if (loading || hasAccess === null || status === 'loading') {
+  // 🔄 授權狀態尚未完成時顯示 loading 畫面
+  if (status === 'loading' || loading || hasAccess === null) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen text-gray-500">
         <img src="/spinner.svg" width={48} className="mb-4" />
@@ -42,6 +22,7 @@ export default function AuthenticatedLayout({ children }) {
     );
   }
 
+  // ❌ 尚未授權 GBP 存取權限時的提示畫面
   if (!hasAccess) {
     const handleConsent = () => {
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -66,6 +47,7 @@ export default function AuthenticatedLayout({ children }) {
     );
   }
 
+  // ✅ 顯示主內容（已授權且登入）
   return (
     <div className="dashboard-layout">
       <Sidebar />
@@ -77,9 +59,9 @@ export default function AuthenticatedLayout({ children }) {
           </div>
         )}
         <main className="dashboard-content">
-          {customerId && (
+          {session?.user?.customer_id && (
             <div className="dashboard-banner mb-4">
-              🎉 歡迎你，客戶代碼：<strong>{customerId}</strong>
+              🎉 歡迎你，客戶代碼：<strong>{session.user.customer_id}</strong>
             </div>
           )}
           {children}
