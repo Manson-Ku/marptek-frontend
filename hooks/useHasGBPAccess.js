@@ -5,42 +5,39 @@ import { useSession } from 'next-auth/react'
 
 export function useHasGBPAccess() {
   const { data: session, status } = useSession()
-
-  // ✅ 初始狀態從 sessionStorage 取快取
-  const cachedAccess = typeof window !== 'undefined'
-    ? sessionStorage.getItem('hasGBPAccess')
-    : null
-
-  const [hasAccess, setHasAccess] = useState(
-    cachedAccess === 'true' ? true : cachedAccess === 'false' ? false : null
-  )
-  const [loading, setLoading] = useState(cachedAccess === null)
+  const [hasAccess, setHasAccess] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (status === 'loading') {
-      return;  // ✅ 等待 session 完成再執行
+    if (status !== 'authenticated' || !session?.idToken) return
+
+    const cached = sessionStorage.getItem('hasGBPAccess')
+    if (cached === 'true') {
+      setHasAccess(true)
+      setLoading(false)
+      return
+    } else if (cached === 'false') {
+      setHasAccess(false)
+      setLoading(false)
+      return
     }
 
-    if (status !== 'authenticated' || !session?.accessToken || cachedAccess !== null) return;
-
-    const verifyAccess = async () => {
-      setLoading(true)
+    const fetchAccess = async () => {
       try {
-        const res = await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts', {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
+        const res = await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/check-gbp-access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_token: session.idToken }),
         })
 
         const result = await res.json()
-        const isAuthorized = res.ok && Array.isArray(result?.accounts) && result.accounts.length > 0
+        const isGranted = result?.hasGBPGranted === true
 
-        sessionStorage.setItem('hasGBPAccess', isAuthorized ? 'true' : 'false')
-        setHasAccess(isAuthorized)
+        sessionStorage.setItem('hasGBPAccess', isGranted ? 'true' : 'false')
+        setHasAccess(isGranted)
       } catch (err) {
-        console.error('🔍 GBP 權限檢查失敗:', err)
+        console.error('🔍 check-gbp-access 錯誤:', err)
         setError(err.message)
         setHasAccess(false)
       } finally {
@@ -48,8 +45,8 @@ export function useHasGBPAccess() {
       }
     }
 
-    verifyAccess()
-  }, [session?.accessToken, status, cachedAccess])
+    fetchAccess()
+  }, [status, session?.idToken])
 
   return { hasAccess, loading, error }
 }

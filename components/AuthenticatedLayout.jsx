@@ -8,31 +8,32 @@ import ProfileCard from './ProfileCard';
 import { useHasGBPAccess } from '@/hooks/useHasGBPAccess';
 
 export default function AuthenticatedLayout({ children }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [showProfile, setShowProfile] = useState(false);
   const [customerId, setCustomerId] = useState(null);
-  const { hasAccess, loading } = useHasGBPAccess();
+  const { hasAccess, loading, error } = useHasGBPAccess();
 
   useEffect(() => {
-    if (session?.idToken) {
-      fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id_token: session.idToken
-        }),
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data?.user?.customer_id) {
-            setCustomerId(data.user.customer_id);
-          }
-        })
-        .catch(err => console.error('❌ Cloud Run error:', err));
-    }
-  }, [session?.idToken]);
+    // ✅ 等待 session 完成且已登入，再查詢使用者資訊
+    if (status !== 'authenticated' || !session?.idToken) return;
 
-  if (loading || hasAccess === null) {
+    fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_token: session.idToken }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data?.user?.customer_id) {
+          setCustomerId(data.user.customer_id);
+        }
+      })
+      .catch(err => {
+        console.error('❌ Cloud Run error:', err);
+      });
+  }, [session?.idToken, status]);
+
+  if (loading || hasAccess === null || status === 'loading') {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen text-gray-500">
         <img src="/spinner.svg" width={48} className="mb-4" />
