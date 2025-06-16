@@ -10,8 +10,9 @@ export default function AuthenticatedLayout({ children }) {
   const { data: session, status } = useSession();
   const [showProfile, setShowProfile] = useState(false);
   const [customerId, setCustomerId] = useState(null);
-  const [hasAccess, setHasAccess] = useState(null); // ❗改為由 login API 控制
-  const [loading, setLoading] = useState(true);     // ✅ 控制整體 loading 狀態
+  const [hasAccess, setHasAccess] = useState(null);
+  const [loginCompleted, setLoginCompleted] = useState(false); // ✅ 避免未完成 login 就判斷權限
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!session?.idToken) return;
@@ -28,22 +29,28 @@ export default function AuthenticatedLayout({ children }) {
         }
 
         if (typeof data?.user?.hasGBPGranted === 'boolean') {
-          setHasAccess(data.user.hasGBPGranted);
+          // ✅ 可選：強制延遲 200ms 再設 hasAccess，讓 session update 有時間完成
+          setTimeout(() => {
+            setHasAccess(data.user.hasGBPGranted);
+            setLoginCompleted(true);
+            setLoading(false);
+          }, 200);
         } else {
           setHasAccess(false);
+          setLoginCompleted(true);
+          setLoading(false);
         }
-
-        setLoading(false);
       })
       .catch(err => {
         console.error('❌ Cloud Run error:', err);
         setHasAccess(false);
+        setLoginCompleted(true);
         setLoading(false);
       });
   }, [session?.idToken]);
 
-  // ⏳ 等待 session 或 login API
-  if (status === 'loading' || loading || hasAccess === null) {
+  // ⏳ 尚未完成 login 或 session 還在 loading
+  if (status === 'loading' || loading || !loginCompleted || hasAccess === null) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen text-gray-500">
         <img src="/spinner.svg" width={48} className="mb-4" />
