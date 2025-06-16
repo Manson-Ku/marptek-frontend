@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import ProfileCard from './ProfileCard';
@@ -10,12 +10,51 @@ import { useHasGBPAccess } from '@/hooks/useHasGBPAccess';
 export default function AuthenticatedLayout({ children }) {
   const { data: session, status } = useSession();
   const [showProfile, setShowProfile] = useState(false);
+  const [customerId, setCustomerId] = useState(null);
+  const [canCheckAccess, setCanCheckAccess] = useState(false); // ✅ 控制是否觸發權限檢查
+
+  // 先執行 login 確保資料寫入 firestore
+  useEffect(() => {
+    const doLogin = async () => {
+      if (session?.idToken) {
+        try {
+          const res = await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_token: session.idToken }),
+          });
+
+          const data = await res.json();
+          if (data?.user?.customer_id) {
+            setCustomerId(data.user.customer_id);
+          }
+
+          // ✅ login 完成後才觸發權限檢查
+          setCanCheckAccess(true);
+        } catch (err) {
+          console.error('❌ login error:', err);
+        }
+      }
+    };
+
+    doLogin();
+  }, [session?.idToken]);
+
+  // ⚠️ login 尚未完成，先等一下
+  if (status === 'loading' || !canCheckAccess) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-screen text-gray-500">
+        <img src="/spinner.svg" width={48} className="mb-4" />
+        <p>正在確認您的登入狀態...</p>
+      </div>
+    );
+  }
+
+  // ✅ login 完成後才呼叫 useHasGBPAccess
   const { hasAccess, loading } = useHasGBPAccess();
 
-  // ✅ 判斷是否仍在登入或檢查授權中
-  const isAuthenticating = status === 'loading' || loading || hasAccess === null;
-
-  if (isAuthenticating) {
+  // ⏳ 等待權限確認
+  if (loading || hasAccess === null) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen text-gray-500">
         <img src="/spinner.svg" width={48} className="mb-4" />
@@ -24,7 +63,7 @@ export default function AuthenticatedLayout({ children }) {
     );
   }
 
-  // ❌ 尚未授權 GBP 存取權限時的提示畫面
+  // ❌ 尚未授權 GBP 存取權限
   if (!hasAccess) {
     const handleConsent = () => {
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -49,7 +88,7 @@ export default function AuthenticatedLayout({ children }) {
     );
   }
 
-  // ✅ 顯示主內容（已授權且登入）
+  // ✅ 已授權內容
   return (
     <div className="dashboard-layout">
       <Sidebar />
@@ -61,9 +100,9 @@ export default function AuthenticatedLayout({ children }) {
           </div>
         )}
         <main className="dashboard-content">
-          {session?.user?.customer_id && (
+          {customerId && (
             <div className="dashboard-banner mb-4">
-              🎉 歡迎你，客戶代碼：<strong>{session.user.customer_id}</strong>
+              🎉 歡迎你，客戶代碼：<strong>{customerId}</strong>
             </div>
           )}
           {children}
