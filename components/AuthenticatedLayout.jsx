@@ -5,39 +5,44 @@ import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import ProfileCard from './ProfileCard';
-import { useHasGBPAccess } from '@/hooks/useHasGBPAccess';
 
 export default function AuthenticatedLayout({ children }) {
   const { data: session, status } = useSession();
   const [showProfile, setShowProfile] = useState(false);
   const [customerId, setCustomerId] = useState(null);
-  const [accessReady, setAccessReady] = useState(false); // ✅ login 完成再觸發權限查詢
-
-  // ✅ login 完成後才觸發 useHasGBPAccess
-  const { hasAccess, loading } = useHasGBPAccess(accessReady);
+  const [hasAccess, setHasAccess] = useState(null); // ❗改為由 login API 控制
+  const [loading, setLoading] = useState(true);     // ✅ 控制整體 loading 狀態
 
   useEffect(() => {
-    if (session?.idToken) {
-      fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_token: session.idToken }),
+    if (!session?.idToken) return;
+
+    fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_token: session.idToken }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data?.user?.customer_id) {
+          setCustomerId(data.user.customer_id);
+        }
+
+        if (typeof data?.user?.hasGBPGranted === 'boolean') {
+          setHasAccess(data.user.hasGBPGranted);
+        } else {
+          setHasAccess(false);
+        }
+
+        setLoading(false);
       })
-        .then(res => res.json())
-        .then(data => {
-          if (data?.user?.customer_id) {
-            setCustomerId(data.user.customer_id);
-            setAccessReady(true); // ✅ login 完成才查權限
-          }
-        })
-        .catch(err => {
-          console.error('❌ Cloud Run error:', err);
-          setAccessReady(true); // 即使錯誤也避免卡死
-        });
-    }
+      .catch(err => {
+        console.error('❌ Cloud Run error:', err);
+        setHasAccess(false);
+        setLoading(false);
+      });
   }, [session?.idToken]);
 
-  // ⏳ 等待 session 或權限
+  // ⏳ 等待 session 或 login API
   if (status === 'loading' || loading || hasAccess === null) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen text-gray-500">
@@ -47,7 +52,7 @@ export default function AuthenticatedLayout({ children }) {
     );
   }
 
-  // ❌ 尚未授權 GBP
+  // ❌ 尚未授權 GBP 存取權限
   if (!hasAccess) {
     const handleConsent = () => {
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -71,7 +76,7 @@ export default function AuthenticatedLayout({ children }) {
     );
   }
 
-  // ✅ 授權成功後顯示主畫面
+  // ✅ 已授權並登入，顯示主畫面
   return (
     <div className="dashboard-layout">
       <Sidebar />
