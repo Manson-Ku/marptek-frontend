@@ -1,8 +1,9 @@
+// app/dashboard/page.jsx
 'use client'
 
 import { useAuthContext } from '@/context/AuthContext'
 
-export default function Dashboard() {
+export default function DashboardPage() {
   const { customerId } = useAuthContext()
 
   return (
