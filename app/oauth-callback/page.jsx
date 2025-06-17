@@ -65,7 +65,7 @@ export default function OAuthCallback() {
         });
 
         setExchanged(true);
-        router.replace('/');
+        window.location.href = '/'; // 或 router.replace('/') + window.location.reload();
       } catch (err) {
         console.error('二階段授權錯誤', err);
         setError('二階段授權失敗');
