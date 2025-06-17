@@ -36,8 +36,15 @@ export default function Dashboard() {
   // loading階段顯示
   if (loading || hasAccess === null) {
     return (
-      <div className="flex flex-col justify-center items-center min-h-screen text-gray-500">
-        <img src="/spinner.svg" width={48} className="mb-4" />
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        color: '#666'
+      }}>
+        <img src="/spinner.svg" width={48} style={{ marginBottom: 16 }} />
         <p>正在確認您的商家權限，請稍候...</p>
       </div>
     )
@@ -64,19 +71,23 @@ export default function Dashboard() {
         )}
         <main className="dashboard-content">
           {customerId && (
-            <div className="dashboard-banner flex items-center gap-4 mb-4">
+            <div className="dashboard-banner">
               🎉 歡迎你，客戶代碼：<strong>{customerId}</strong>
               {hasAccess ? (
-                <span className="text-green-600 font-bold flex items-center text-base">
-                  <svg className="inline-block align-middle w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M16.707 6.293a1 1 0 010 1.414l-7.071 7.071a1 1 0 01-1.414 0l-3.536-3.536a1 1 0 111.414-1.414L9 12.586l6.293-6.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                <span className="dashboard-gbp-auth">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 6.293a1 1 0 010 1.414l-7.071 7.071a1 1 0 01-1.414 0l-3.536-3.536a1 1 0 111.414-1.414L9 12.586l6.293-6.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   已授權
                 </span>
               ) : (
                 <button
                   onClick={handleConsent}
-                  className="ml-2 px-3 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 transition"
+                  className="dashboard-gbp-auth-btn"
                 >
                   👉 點此完成 GBP 授權
                 </button>
