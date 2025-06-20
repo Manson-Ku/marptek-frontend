@@ -144,25 +144,26 @@
     overflow-wrap: anywhere;    /* 任何情況都能換行 */
   }
   .dashboard-card ul {
-    width: 100%;
-    list-style: disc inside;
-    margin: 0.5rem 0 0 0;
-    padding: 0 0 0 1em;
+    max-height: 420px;
+    overflow-y: auto;
   }
-
   .dashboard-card li {
-    margin-bottom: 1.2em;
-    padding-bottom: 0.5em;
-    border-bottom: 1px solid #f1f5f9;
-    font-size: 1rem;
-    line-height: 1.6;
-    word-break: break-word;
+    background: #f6f8fa;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px #0001;
+    margin-bottom: 1em;
+    padding: 0.8em 1em;
+    border: none;
   }
 
   .dashboard-card li:last-child {
     border-bottom: none;
   }
-
+  .dashboard-card .account-meta {
+    font-size: 0.95em;
+    color: #64748b;
+    margin-top: 0.15em;
+  }
 /* Dashboard Banner 授權勾勾樣式 */
 .dashboard-banner {
   display: flex;

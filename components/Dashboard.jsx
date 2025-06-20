@@ -127,11 +127,13 @@ export default function Dashboard() {
               {accountData && accountData.length > 0 ? (
                 <ul>
                   {accountData.map(acc => (
-                    <li key={acc.accountName + acc.upd_datetime}>
+                    <li>
                       <strong>{acc.accountName}</strong>
-                      <div>ID: {acc.customer_id}</div>
-                      <div>有效: {String(acc.is_active)}</div>
-                      <div>更新: {typeof acc.upd_datetime === 'string' ? acc.upd_datetime : acc.upd_datetime?.value}</div>
+                      <div className="account-meta">
+                        ID: {acc.customer_id}<br/>
+                        有效: {String(acc.is_active)}<br/>
+                        更新: {typeof acc.upd_datetime === 'string' ? acc.upd_datetime : acc.upd_datetime?.value}
+                      </div>
                     </li>
                   ))}
                 </ul>
