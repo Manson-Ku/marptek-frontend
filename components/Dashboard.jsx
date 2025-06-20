@@ -18,7 +18,7 @@ export default function Dashboard() {
   const [accountLoading, setAccountLoading] = useState(false)
   const [accountError, setAccountError] = useState(null)
 
-  // 地點資料 state
+  // 地點列表 state
   const [locations, setLocations] = useState([])
   const [filteredLocations, setFilteredLocations] = useState([])
   const [selectedAccountID, setSelectedAccountID] = useState(null)
@@ -64,7 +64,7 @@ export default function Dashboard() {
     }
   }, [customerId])
 
-  // 讀取地點清單
+  // 讀取地點列表
   useEffect(() => {
     if (customerId) {
       fetch(`/api/auth/locations?customer_id=${customerId}`)
@@ -77,7 +77,7 @@ export default function Dashboard() {
     }
   }, [customerId])
 
-  // 帳戶群組點擊，filter 地點
+  // 左側帳戶點擊 handler
   const handleAccountClick = (accountID) => {
     setSelectedAccountID(accountID)
     setCurrentPage(1)
@@ -88,11 +88,11 @@ export default function Dashboard() {
     }
   }
 
-  // 分頁
+  // 分頁處理
   const pageCount = Math.ceil(filteredLocations.length / pageSize)
   const displayLocations = filteredLocations.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
-  // loading階段顯示
+  // loading 階段顯示
   if (loading || hasAccess === null) {
     return (
       <div style={{
@@ -154,47 +154,28 @@ export default function Dashboard() {
             </div>
           )}
           <div className="dashboard-grid">
-            {/* Placeholder 1：帳戶/地區群組列表 */}
+            {/* Placeholder 1：帳戶列表（地區群組） */}
             <div className="dashboard-card">
               <h3>地區群組/帳戶列表</h3>
               {accountLoading && <div>載入中...</div>}
               {accountError && <div style={{ color: 'red' }}>{accountError}</div>}
               {accountData && accountData.length > 0 ? (
-                <ul>
+                <ul style={{ paddingLeft: 0 }}>
                   <li>
                     <button
+                      className={`account-btn${selectedAccountID === null ? ' active' : ''}`}
                       onClick={() => handleAccountClick(null)}
-                      style={{
-                        background: selectedAccountID === null ? '#2563eb' : '#f6f8fa',
-                        color: selectedAccountID === null ? '#fff' : '#333',
-                        border: 'none',
-                        borderRadius: 4,
-                        marginBottom: 6,
-                        padding: '4px 12px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      全部
-                    </button>
+                    >全部</button>
                   </li>
                   {accountData.map(acc => (
                     <li key={acc.accountID}>
                       <button
+                        className={`account-btn${selectedAccountID === acc.accountID ? ' active' : ''}`}
                         onClick={() => handleAccountClick(acc.accountID)}
-                        style={{
-                          background: selectedAccountID === acc.accountID ? '#2563eb' : '#f6f8fa',
-                          color: selectedAccountID === acc.accountID ? '#fff' : '#333',
-                          border: 'none',
-                          borderRadius: 4,
-                          marginBottom: 6,
-                          padding: '4px 12px',
-                          cursor: 'pointer',
-                          fontWeight: 'bold'
-                        }}
                       >
                         {acc.accountName}
                       </button>
-                      <div className="account-meta" style={{ fontSize: 12, color: '#555' }}>
+                      <div className="account-meta">
                         ID: {acc.accountID}<br />
                         有效: {String(acc.is_active)}<br />
                         更新: {typeof acc.upd_datetime === 'string' ? acc.upd_datetime : acc.upd_datetime?.value}
@@ -204,24 +185,12 @@ export default function Dashboard() {
                 </ul>
               ) : !accountLoading && <div>找不到資料</div>}
             </div>
-            {/* Placeholder 2：地點清單 */}
+            {/* Placeholder 2：地點列表＋分頁 */}
             <div className="dashboard-card">
               <h3>地點列表（{filteredLocations.length}）</h3>
-              <ul style={{ maxHeight: 420, overflowY: 'auto', width: '100%', paddingLeft: 0, marginBottom: '0.8em' }}>
+              <ul className="location-list">
                 {displayLocations.map(loc => (
-                  <li
-                    key={loc.name + loc.accountID}
-                    style={{
-                      background: '#f6f8fa',
-                      borderRadius: 8,
-                      marginBottom: '1em',
-                      padding: '0.8em 1em',
-                      fontSize: '1rem',
-                      lineHeight: 1.6,
-                      listStyle: 'none',
-                      boxShadow: '0 1px 4px #0001'
-                    }}
-                  >
+                  <li className="location-item" key={loc.name + loc.accountID}>
                     <strong>{loc.name}</strong><br />
                     有效: {String(loc.is_active)}<br />
                     更新: {typeof loc.upd_datetime === 'string'
@@ -229,28 +198,18 @@ export default function Dashboard() {
                       : loc.upd_datetime?.value || ''}
                   </li>
                 ))}
-                {displayLocations.length === 0 && <li>找不到地點資料</li>}
+                {displayLocations.length === 0 && <li className="location-item">找不到地點資料</li>}
               </ul>
-              {/* 分頁按鈕 */}
-              <div className="pagination" style={{ marginTop: 10 }}>
+              <div className="pagination">
                 {Array.from({ length: pageCount }).map((_, idx) =>
                   <button
-                    key={idx}
+                    className={`pagination-btn${currentPage === idx + 1 ? ' active' : ''}`}
                     onClick={() => setCurrentPage(idx + 1)}
-                    style={{
-                      marginRight: 6,
-                      padding: '2px 8px',
-                      borderRadius: 4,
-                      background: idx + 1 === currentPage ? '#2563eb' : '#e5e7eb',
-                      color: idx + 1 === currentPage ? '#fff' : '#333',
-                      border: 'none',
-                      cursor: 'pointer'
-                    }}
+                    key={idx}
                   >{idx + 1}</button>
                 )}
               </div>
             </div>
-            {/* Placeholder 3：維持不動 */}
             <div className="dashboard-card">Placeholder 3</div>
           </div>
         </main>
