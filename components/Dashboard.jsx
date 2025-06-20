@@ -43,7 +43,7 @@ export default function Dashboard() {
     if (customerId) {
       setAccountLoading(true)
       setAccountError(null)
-      fetch(`/api/accounts?customer_id=${customerId}`)
+      fetch(`/api/auth/accounts?customer_id=${customerId}`)
         .then(res => res.json())
         .then(data => {
           if (data.accounts) setAccountData(data.accounts)
