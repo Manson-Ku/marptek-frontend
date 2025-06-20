@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [showProfile, setShowProfile] = useState(false)
   const [customerId, setCustomerId] = useState(null)
   const { hasAccess, loading } = useHasGBPAccess()
+  const [locationsLoading, setLocationsLoading] = useState(false);
 
   // 帳戶資料 state
   const [accountData, setAccountData] = useState([])
@@ -67,15 +68,21 @@ export default function Dashboard() {
   // 讀取地點列表
   useEffect(() => {
     if (customerId) {
+      setLocationsLoading(true);
       fetch(`/api/auth/locations?customer_id=${customerId}`)
         .then(res => res.json())
         .then(data => {
-          setLocations(data.locations || [])
-          setFilteredLocations(data.locations || [])
+          setLocations(data.locations || []);
+          setFilteredLocations(data.locations || []);
+          setLocationsLoading(false);
         })
-        .catch(e => { /* 可加錯誤提示 */ })
+        .catch(e => {
+          setLocations([]);
+          setFilteredLocations([]);
+          setLocationsLoading(false);
+        });
     }
-  }, [customerId])
+  }, [customerId]);
 
   // 左側帳戶按鈕的 onClick handler
   const handleAccountClick = (accountResourceName) => {
@@ -190,17 +197,22 @@ export default function Dashboard() {
             <div className="dashboard-card">
               <h3>地點列表（{filteredLocations.length}）</h3>
               <ul className="location-list">
-                {displayLocations.map(loc => (
-                  <li className="location-item" key={loc.name}>
-                    <strong>名稱：{loc.title || '（未命名）'}</strong><br />
-                    ID：{loc.name}<br />
-                    有效: {String(loc.is_active)}<br />
-                    更新: {typeof loc.upd_datetime === 'string'
-                      ? loc.upd_datetime
-                      : loc.upd_datetime?.value || ''}
-                  </li>
-                ))}
-                {displayLocations.length === 0 && <li className="location-item">找不到地點資料</li>}
+                {locationsLoading ? (
+                  <li className="location-item">載入中...</li>
+                ) : displayLocations.length > 0 ? (
+                  displayLocations.map(loc => (
+                    <li className="location-item" key={loc.name}>
+                      <strong>名稱：{loc.title || '（未命名）'}</strong><br />
+                      ID：{loc.name}<br />
+                      有效: {String(loc.is_active)}<br />
+                      更新: {typeof loc.upd_datetime === 'string'
+                        ? loc.upd_datetime
+                        : loc.upd_datetime?.value || ''}
+                    </li>
+                  ))
+                ) : (
+                  <li className="location-item">找不到地點資料</li>
+                )}
               </ul>
               <div className="pagination">
                 {Array.from({ length: pageCount }).map((_, idx) =>
