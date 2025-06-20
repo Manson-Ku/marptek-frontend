@@ -24,7 +24,7 @@ export async function GET(request) {
   }
 
   const sql = `
-    SELECT accountName, customer_id, is_active, upd_datetime
+    SELECT accountName,name,customer_id, is_active, upd_datetime
     FROM \`gbp-management-marptek.a_gbp_accounts.list\`
     WHERE customer_id = @customer_id
     ORDER BY upd_datetime DESC

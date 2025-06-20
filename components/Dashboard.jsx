@@ -77,12 +77,12 @@ export default function Dashboard() {
     }
   }, [customerId])
 
-  // 左側帳戶點擊 handler
-  const handleAccountClick = (accountID) => {
-    setSelectedAccountID(accountID)
+  // 左側帳戶按鈕的 onClick handler
+  const handleAccountClick = (accountResourceName) => {
+    setSelectedAccountID(accountResourceName)
     setCurrentPage(1)
-    if (accountID) {
-      setFilteredLocations(locations.filter(loc => loc.accountID === accountID))
+    if (accountResourceName) {
+      setFilteredLocations(locations.filter(loc => loc.accountID === accountResourceName))
     } else {
       setFilteredLocations(locations)
     }
@@ -169,15 +169,15 @@ export default function Dashboard() {
                     >全部</button>
                   </li>
                   {accountData.map(acc => (
-                    <li key={acc.accountID}>
+                    <li key={acc.name}>
                       <button
-                        className={`account-btn${selectedAccountID === acc.accountID ? ' active' : ''}`}
-                        onClick={() => handleAccountClick(acc.accountID)}
+                        className={`account-btn${selectedAccountID === acc.name ? ' active' : ''}`}
+                        onClick={() => handleAccountClick(acc.name)}
                       >
-                        {acc.accountName}
+                        {acc.accountName || acc.name}
                       </button>
                       <div className="account-meta">
-                        ID: {acc.accountID}<br />
+                        ID: {acc.name}<br />
                         有效: {String(acc.is_active)}<br />
                         更新: {typeof acc.upd_datetime === 'string' ? acc.upd_datetime : acc.upd_datetime?.value}
                       </div>
@@ -191,8 +191,9 @@ export default function Dashboard() {
               <h3>地點列表（{filteredLocations.length}）</h3>
               <ul className="location-list">
                 {displayLocations.map(loc => (
-                  <li className="location-item" key={loc.name + loc.accountID}>
-                    <strong>{loc.name}</strong><br />
+                  <li className="location-item" key={loc.name}>
+                    <strong>名稱：{loc.title || '（未命名）'}</strong><br />
+                    ID：{loc.name}<br />
                     有效: {String(loc.is_active)}<br />
                     更新: {typeof loc.upd_datetime === 'string'
                       ? loc.upd_datetime
