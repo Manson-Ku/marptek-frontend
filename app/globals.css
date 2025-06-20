@@ -110,6 +110,9 @@
     flex: 1;
     background: #f9fafb;
     overflow-y: auto;
+    max-width: 1280px; /* 新增這行 */
+    margin-left: auto; /* 水平置中 */
+    margin-right: auto;
   }
   .dashboard-grid {
     display: grid;
@@ -130,10 +133,34 @@
     background: white;
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    height: 12rem;
+    min-height: 10rem;
+    /* height: 12rem; 移除這行 */
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;     /* 垂直排列 */
+    align-items: flex-start;    /* 內容靠左 */
+    justify-content: flex-start;
+    padding: 1.5rem 1.25rem;
+    word-break: break-all;      /* 內容強制換行 */
+    overflow-wrap: anywhere;    /* 任何情況都能換行 */
+  }
+  .dashboard-card ul {
+    width: 100%;
+    list-style: disc inside;
+    margin: 0.5rem 0 0 0;
+    padding: 0 0 0 1em;
+  }
+
+  .dashboard-card li {
+    margin-bottom: 1.2em;
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 1rem;
+    line-height: 1.6;
+    word-break: break-word;
+  }
+
+  .dashboard-card li:last-child {
+    border-bottom: none;
   }
 
 /* Dashboard Banner 授權勾勾樣式 */
