@@ -14,9 +14,16 @@ export default function Dashboard() {
   const { hasAccess, loading } = useHasGBPAccess()
 
   // 帳戶資料 state
-  const [accountData, setAccountData] = useState(null)
+  const [accountData, setAccountData] = useState([])
   const [accountLoading, setAccountLoading] = useState(false)
   const [accountError, setAccountError] = useState(null)
+
+  // 地點列表 state
+  const [locations, setLocations] = useState([])
+  const [filteredLocations, setFilteredLocations] = useState([])
+  const [selectedAccountID, setSelectedAccountID] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 100
 
   // 取得 customerId
   useEffect(() => {
@@ -38,7 +45,7 @@ export default function Dashboard() {
     }
   }, [session?.idToken])
 
-  // 根據 customerId 讀取 BigQuery API
+  // 讀取帳戶群組
   useEffect(() => {
     if (customerId) {
       setAccountLoading(true)
@@ -57,7 +64,35 @@ export default function Dashboard() {
     }
   }, [customerId])
 
-  // loading階段顯示
+  // 讀取地點列表
+  useEffect(() => {
+    if (customerId) {
+      fetch(`/api/auth/locations?customer_id=${customerId}`)
+        .then(res => res.json())
+        .then(data => {
+          setLocations(data.locations || [])
+          setFilteredLocations(data.locations || [])
+        })
+        .catch(e => { /* 可加錯誤提示 */ })
+    }
+  }, [customerId])
+
+  // 左側帳戶點擊 handler
+  const handleAccountClick = (accountID) => {
+    setSelectedAccountID(accountID)
+    setCurrentPage(1)
+    if (accountID) {
+      setFilteredLocations(locations.filter(loc => loc.accountID === accountID))
+    } else {
+      setFilteredLocations(locations)
+    }
+  }
+
+  // 分頁處理
+  const pageCount = Math.ceil(filteredLocations.length / pageSize)
+  const displayLocations = filteredLocations.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+  // loading 階段顯示
   if (loading || hasAccess === null) {
     return (
       <div style={{
@@ -119,19 +154,32 @@ export default function Dashboard() {
             </div>
           )}
           <div className="dashboard-grid">
-            {/* Placeholder 1：顯示 BigQuery 讀到的帳戶/地區群組 */}
+            {/* Placeholder 1：地區群組/帳戶列表 */}
             <div className="dashboard-card">
               <h3>地區群組/帳戶列表</h3>
               {accountLoading && <div>載入中...</div>}
               {accountError && <div style={{ color: 'red' }}>{accountError}</div>}
               {accountData && accountData.length > 0 ? (
-                <ul>
+                <ul style={{ paddingLeft: 0 }}>
+                  <li>
+                    <button
+                      className={`account-btn${selectedAccountID === null ? ' active' : ''}`}
+                      onClick={() => handleAccountClick(null)}
+                    >
+                      全部
+                    </button>
+                  </li>
                   {accountData.map(acc => (
-                    <li>
-                      <strong>{acc.accountName}</strong>
+                    <li key={acc.accountID}>
+                      <button
+                        className={`account-btn${selectedAccountID === acc.accountID ? ' active' : ''}`}
+                        onClick={() => handleAccountClick(acc.accountID)}
+                      >
+                        {acc.accountName}
+                      </button>
                       <div className="account-meta">
-                        ID: {acc.customer_id}<br/>
-                        有效: {String(acc.is_active)}<br/>
+                        ID: {acc.accountID}<br />
+                        有效: {String(acc.is_active)}<br />
                         更新: {typeof acc.upd_datetime === 'string' ? acc.upd_datetime : acc.upd_datetime?.value}
                       </div>
                     </li>
@@ -139,7 +187,32 @@ export default function Dashboard() {
                 </ul>
               ) : !accountLoading && <div>找不到資料</div>}
             </div>
-            <div className="dashboard-card">Placeholder 2</div>
+            {/* Placeholder 2：地點列表＋分頁 */}
+            <div className="dashboard-card">
+              <h3>地點列表（{filteredLocations.length}）</h3>
+              <ul className="location-list">
+                {displayLocations.map(loc => (
+                  <li className="location-item" key={loc.name + loc.accountID}>
+                    <strong>{loc.name}</strong><br />
+                    有效: {String(loc.is_active)}<br />
+                    更新: {typeof loc.upd_datetime === 'string'
+                      ? loc.upd_datetime
+                      : loc.upd_datetime?.value || ''}
+                  </li>
+                ))}
+                {displayLocations.length === 0 && <li>找不到地點資料</li>}
+              </ul>
+              {/* 分頁按鈕 */}
+              <div className="pagination">
+                {Array.from({ length: pageCount }).map((_, idx) =>
+                  <button
+                    className={`pagination-btn${idx + 1 === currentPage ? ' active' : ''}`}
+                    key={idx}
+                    onClick={() => setCurrentPage(idx + 1)}
+                  >{idx + 1}</button>
+                )}
+              </div>
+            </div>
             <div className="dashboard-card">Placeholder 3</div>
           </div>
         </main>
