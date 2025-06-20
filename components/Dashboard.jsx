@@ -13,6 +13,11 @@ export default function Dashboard() {
   const [customerId, setCustomerId] = useState(null)
   const { hasAccess, loading } = useHasGBPAccess()
 
+  // 帳戶資料 state
+  const [accountData, setAccountData] = useState(null)
+  const [accountLoading, setAccountLoading] = useState(false)
+  const [accountError, setAccountError] = useState(null)
+
   // 取得 customerId
   useEffect(() => {
     if (session?.idToken) {
@@ -32,6 +37,25 @@ export default function Dashboard() {
         .catch(err => console.error('❌ Cloud Run error:', err))
     }
   }, [session?.idToken])
+
+  // 根據 customerId 讀取 BigQuery API
+  useEffect(() => {
+    if (customerId) {
+      setAccountLoading(true)
+      setAccountError(null)
+      fetch(`/api/accounts?customer_id=${customerId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.accounts) setAccountData(data.accounts)
+          else setAccountError(data.error || '查無資料')
+          setAccountLoading(false)
+        })
+        .catch(err => {
+          setAccountError('API 錯誤：' + err.message)
+          setAccountLoading(false)
+        })
+    }
+  }, [customerId])
 
   // loading階段顯示
   if (loading || hasAccess === null) {
@@ -95,7 +119,24 @@ export default function Dashboard() {
             </div>
           )}
           <div className="dashboard-grid">
-            <div className="dashboard-card">Placeholder 1</div>
+            {/* Placeholder 1：顯示 BigQuery 讀到的帳戶/地區群組 */}
+            <div className="dashboard-card">
+              <h3>地區群組/帳戶列表</h3>
+              {accountLoading && <div>載入中...</div>}
+              {accountError && <div style={{ color: 'red' }}>{accountError}</div>}
+              {accountData && accountData.length > 0 ? (
+                <ul>
+                  {accountData.map(acc => (
+                    <li key={acc.accountName + acc.upd_datetime}>
+                      <strong>{acc.accountName}</strong>
+                      <div>ID: {acc.customer_id}</div>
+                      <div>有效: {String(acc.is_active)}</div>
+                      <div>更新: {typeof acc.upd_datetime === 'string' ? acc.upd_datetime : acc.upd_datetime?.value}</div>
+                    </li>
+                  ))}
+                </ul>
+              ) : !accountLoading && <div>找不到資料</div>}
+            </div>
             <div className="dashboard-card">Placeholder 2</div>
             <div className="dashboard-card">Placeholder 3</div>
           </div>
