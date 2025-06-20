@@ -134,6 +134,7 @@ export default function Dashboard() {
               🎉 歡迎你，客戶代碼：<strong>{customerId}</strong>
               {hasAccess ? (
                 <span className="dashboard-gbp-auth">
+                  {/* 強制 className，寬高只能由 CSS 控制 */}
                   <svg className="dashboard-gbp-auth-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path
                       fillRule="evenodd"
