@@ -1,9 +1,8 @@
 .reviews-container {
   display: flex;
-  height: 100vh;
+  height: calc(100vh - 4rem);   /* header 高度 4rem */
   width: 100vw;
   background: #f7fafc;
-  font-family: "Segoe UI", Arial, "Microsoft JhengHei", sans-serif;
 }
 
 /* 左側側欄 */
