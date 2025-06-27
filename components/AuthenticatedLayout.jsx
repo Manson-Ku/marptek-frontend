@@ -6,7 +6,8 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import ProfileCard from './ProfileCard';
 
-export default function AuthenticatedLayout({ children }) {
+// 新增 noContainer prop
+export default function AuthenticatedLayout({ children, noContainer = false }) {
   const { data: session, status } = useSession();
   const [showProfile, setShowProfile] = useState(false);
 
@@ -48,7 +49,8 @@ export default function AuthenticatedLayout({ children }) {
             <ProfileCard session={session} onLogout={() => signOut({ callbackUrl: '/login' })} />
           </div>
         )}
-        <main className="dashboard-content">{children}</main>
+        {/* 這裡根據 noContainer 決定要不要包 dashboard-content */}
+        {noContainer ? children : <main className="dashboard-content">{children}</main>}
       </div>
     </div>
   );

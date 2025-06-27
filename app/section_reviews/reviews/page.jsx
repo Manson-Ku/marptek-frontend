@@ -4,7 +4,7 @@ import "./reviews.css";
 
 export default function Page() {
   return (
-    <AuthenticatedLayout>
+    <AuthenticatedLayout noContainer>
       <div className="reviews-container">
         {/* 左側側欄 */}
         <aside className="reviews-sidebar">
