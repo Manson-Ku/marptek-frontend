@@ -7,7 +7,9 @@
 
 /* 左側側欄 */
 .reviews-sidebar {
-  width: 260px;
+  width: 20%;
+  min-width: 180px;
+  max-width: 320px;
   background: #fff;
   border-right: 1px solid #e3e3e3;
   display: flex;
@@ -84,7 +86,9 @@
 
 /* 中間評論清單 */
 .reviews-list {
-  flex: 1;
+  width: 30%;
+  min-width: 240px;
+  max-width: 600px;
   display: flex;
   flex-direction: column;
   background: #f7fafc;
@@ -170,8 +174,8 @@
 
 /* 右側詳情 */
 .reviews-detail {
-  width: 430px;
-  max-width: 40vw;
+  width: 50%;
+  min-width: 340px;
   background: #fff;
   border-left: 1px solid #e3e3e3;
   display: flex;
