@@ -17,9 +17,10 @@ function getStarNum(starRating) {
 }
 
 export default function Page() {
-  const { customerId, loading: customerLoading, error: customerError } = useCustomer();
+  const { customerId, loading: customerLoading } = useCustomer();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedReview, setSelectedReview] = useState(null); // <--- 新增
 
   useEffect(() => {
     if (!customerId) return;
@@ -29,6 +30,7 @@ export default function Page() {
       .then(data => {
         setReviews(data.reviews || []);
         setLoading(false);
+        setSelectedReview((data.reviews && data.reviews[0]) || null); // 預設選第一筆
       })
       .catch(() => setLoading(false));
   }, [customerId]);
@@ -72,7 +74,12 @@ export default function Page() {
               <div style={{ padding: 40, color: "#aaa", textAlign: "center" }}>目前查無評論</div>
             ) : (
               reviews.map((r, i) => (
-                <div key={r.reviewId || i} className="reviews-list-item">
+                <div
+                  key={r.reviewId || i}
+                  className={`reviews-list-item${selectedReview?.reviewId === r.reviewId ? ' active' : ''}`}
+                  onClick={() => setSelectedReview(r)}
+                  style={{ cursor: "pointer" }}
+                >
                   <div className="reviews-avatar"
                     style={{
                       backgroundImage: r.profilePhotoUrl ? `url(${r.profilePhotoUrl})` : undefined,
@@ -99,20 +106,50 @@ export default function Page() {
           </div>
         </main>
 
-        {/* 右側詳情（靜態 placeholder，可之後再動態綁定） */}
+        {/* 右側詳情 */}
         <section className="reviews-detail">
-          <div className="reviews-detail-header">
-            <div className="reviews-detail-title">單篇評論內容</div>
-            <div className="reviews-detail-text">
-              這裡顯示單一評論的詳細內容，評論者、評論全文、星等等
-            </div>
-          </div>
-          <div className="reviews-detail-reply">
-            <textarea className="reviews-reply-input" placeholder="輸入你的回覆內容…" />
-            <div className="reviews-detail-actions">
-              <button className="reviews-reply-btn">送出回覆</button>
-            </div>
-          </div>
+          {selectedReview ? (
+            <>
+              <div className="reviews-detail-header">
+                <div className="reviews-detail-title">
+                  {selectedReview.displayName || "匿名"}
+                  <span style={{ marginLeft: 12, color: "#faad14" }}>
+                    {"★".repeat(getStarNum(selectedReview.starRating))}
+                  </span>
+                  <span style={{ color: "#b7b7b7", marginLeft: 16, fontSize: "0.98rem" }}>
+                    {selectedReview.createTime ? selectedReview.createTime.replace("T", " ").split(".")[0] : ""}
+                  </span>
+                </div>
+                <div className="reviews-detail-text" style={{ margin: "12px 0 0 0" }}>
+                  {selectedReview.comment || <span style={{ color: "#bbb" }}>（無評論內容）</span>}
+                </div>
+              </div>
+              <div className="reviews-detail-reply">
+                <div style={{ color: "#666", fontSize: "0.96rem", marginBottom: 6 }}>
+                  回覆內容
+                </div>
+                <textarea
+                  className="reviews-reply-input"
+                  placeholder="輸入你的回覆內容…"
+                  defaultValue={selectedReview.replyComment || ""}
+                />
+                <div className="reviews-detail-actions">
+                  <button className="reviews-reply-btn">送出回覆</button>
+                </div>
+                {selectedReview.replyComment && (
+                  <div style={{ color: "#46a", fontSize: "0.93rem", marginTop: 16 }}>
+                    上次回覆：{selectedReview.replyComment}
+                    {selectedReview.replyUpdateTime &&
+                      <span style={{ marginLeft: 10, color: "#b7b7b7" }}>
+                        ({selectedReview.replyUpdateTime.replace("T", " ").split(".")[0]})
+                      </span>}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div style={{ padding: 36, color: "#aaa" }}>請從左側清單選擇一則評論</div>
+          )}
         </section>
       </div>
     </AuthenticatedLayout>
