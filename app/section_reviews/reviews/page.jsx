@@ -1,8 +1,28 @@
 ﻿"use client";
+import { useEffect, useState } from "react";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
+import { useCustomer } from "@/context/CustomerContext";
 import "./reviews.css";
 
 export default function Page() {
+  const { customerId, loading: customerLoading, error: customerError } = useCustomer();
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // 可以再加條件/篩選用 state，這裡先省略
+
+  useEffect(() => {
+    if (!customerId) return;
+    setLoading(true);
+    fetch(`/api/reviews?customer_id=${customerId}`)
+      .then(res => res.json())
+      .then(data => {
+        setReviews(data.reviews || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [customerId]);
+
   return (
     <AuthenticatedLayout noContainer>
       <div className="reviews-container">
@@ -15,16 +35,16 @@ export default function Page() {
               <button className="reviews-date-btn">更改日期</button>
             </div>
             <ul className="reviews-folder-list">
-              <li className="active">All Reviews <span>226</span></li>
-              <li>Open <span>186</span></li>
-              <li>Replied <span>40</span></li>
-              {/* ...更多選單 */}
+              <li className="active">All Reviews <span>{reviews.length}</span></li>
+              <li>Open <span>--</span></li>
+              <li>Replied <span>--</span></li>
             </ul>
           </div>
           <div className="reviews-sidebar-footer">
             <button className="reviews-add-template">+ 新增回覆範本</button>
           </div>
         </aside>
+
         {/* 中間評論清單 */}
         <main className="reviews-list">
           <div className="reviews-list-header">
@@ -36,19 +56,42 @@ export default function Page() {
             </div>
           </div>
           <div className="reviews-list-content">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="reviews-list-item">
-                <div className="reviews-avatar"></div>
-                <div className="reviews-item-content">
-                  <div className="reviews-author">評論者名稱 {i + 1}</div>
-                  <div className="reviews-snippet">評論內容預覽 Lorem ipsum dolor sit amet.</div>
+            {customerLoading || loading ? (
+              <div style={{ padding: 40, color: "#888", textAlign: "center" }}>載入中…</div>
+            ) : reviews.length === 0 ? (
+              <div style={{ padding: 40, color: "#aaa", textAlign: "center" }}>目前查無評論</div>
+            ) : (
+              reviews.map((r, i) => (
+                <div key={r.reviewId || i} className="reviews-list-item">
+                  <div className="reviews-avatar"
+                    style={{
+                      backgroundImage: r.reviewer?.profilePhotoUrl ? `url(${r.reviewer.profilePhotoUrl})` : undefined,
+                      backgroundSize: "cover"
+                    }}
+                  ></div>
+                  <div className="reviews-item-content">
+                    <div className="reviews-author">
+                      {r.reviewer?.displayName || "匿名"}
+                      {r.starRating && (
+                        <span style={{ marginLeft: 8, color: "#faad14" }}>
+                          {"★".repeat(Number(r.starRating[0]) || 0)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="reviews-snippet">
+                      {r.comment?.slice(0, 40) || "（無內容）"}
+                    </div>
+                  </div>
+                  <div className="reviews-date">
+                    {r.createTime ? r.createTime.split("T")[0] : "--"}
+                  </div>
                 </div>
-                <div className="reviews-date">2025-06-20</div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </main>
-        {/* 右側詳情 */}
+
+        {/* 右側詳情（靜態 placeholder，可之後再動態綁定） */}
         <section className="reviews-detail">
           <div className="reviews-detail-header">
             <div className="reviews-detail-title">單篇評論內容</div>
