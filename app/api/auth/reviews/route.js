@@ -39,7 +39,7 @@ export async function GET(request) {
       locationId,
       accountId,
       deleted
-    FROM \`gbp-management-marptek.gbp_reviews.list\`
+    FROM \`gbp-management-marptek.gbp_review.reviews_final\`
     WHERE customer_id = @customer_id
       AND (deleted IS NULL OR deleted = FALSE)
     ORDER BY createTime DESC
