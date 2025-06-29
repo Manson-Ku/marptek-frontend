@@ -1,14 +1,17 @@
-'use client'; // ✅ 這行一定要放最上面
+'use client';
 
 import { SessionProvider } from 'next-auth/react';
 import LocaleProvider from '@/components/LocaleProvider';
+import { CustomerProvider } from '@/context/CustomerContext'; // ⭐️ 加這行
 
 export default function Providers({ children }) {
   return (
     <SessionProvider>
-      <LocaleProvider>
-        {children}
-      </LocaleProvider>
+      <CustomerProvider>
+        <LocaleProvider>
+          {children}
+        </LocaleProvider>
+      </CustomerProvider>
     </SessionProvider>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react"
 import { useState, useEffect } from 'react'
+import { useCustomer } from '@/context/CustomerContext'         // ⭐️ 用 context
 import Sidebar from './Sidebar'
 import Header from './Header'
 import ProfileCard from './ProfileCard'
@@ -9,8 +10,8 @@ import { useHasGBPAccess } from '@/hooks/useHasGBPAccess'
 
 export default function Dashboard() {
   const { data: session } = useSession()
+  const { customerId, loading: customerLoading, error: customerError } = useCustomer() // ⭐️
   const [showProfile, setShowProfile] = useState(false)
-  const [customerId, setCustomerId] = useState(null)
   const { hasAccess, loading } = useHasGBPAccess()
   const [locationsLoading, setLocationsLoading] = useState(false);
 
@@ -25,26 +26,6 @@ export default function Dashboard() {
   const [selectedAccountID, setSelectedAccountID] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 100
-
-  // 取得 customerId
-  useEffect(() => {
-    if (session?.idToken) {
-      fetch('https://marptek-login-api-84949832003.asia-east1.run.app/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id_token: session.idToken
-        }),
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data?.user?.customer_id) {
-            setCustomerId(data.user.customer_id)
-          }
-        })
-        .catch(err => console.error('❌ Cloud Run error:', err))
-    }
-  }, [session?.idToken])
 
   // 讀取帳戶群組
   useEffect(() => {
@@ -100,7 +81,7 @@ export default function Dashboard() {
   const displayLocations = filteredLocations.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   // loading 階段顯示
-  if (loading || hasAccess === null) {
+  if (customerLoading || loading || hasAccess === null) {
     return (
       <div style={{
         display: 'flex',
@@ -112,6 +93,22 @@ export default function Dashboard() {
       }}>
         <img src="/spinner.svg" width={48} style={{ marginBottom: 16 }} />
         <p>正在確認您的商家權限，請稍候...</p>
+      </div>
+    )
+  }
+
+  if (customerError) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        color: 'red'
+      }}>
+        <p>取得 customerId 錯誤：{customerError}</p>
+        <button onClick={() => signOut({ callbackUrl: '/login' })}>重新登入</button>
       </div>
     )
   }
@@ -141,7 +138,6 @@ export default function Dashboard() {
               🎉 歡迎你，客戶代碼：<strong>{customerId}</strong>
               {hasAccess ? (
                 <span className="dashboard-gbp-auth">
-                  {/* 強制 className，寬高只能由 CSS 控制 */}
                   <svg className="dashboard-gbp-auth-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path
                       fillRule="evenodd"
