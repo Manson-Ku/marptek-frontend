@@ -4,12 +4,22 @@ import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import { useCustomer } from "@/context/CustomerContext";
 import "./reviews.css";
 
+// 星等字串轉數字
+function getStarNum(starRating) {
+  switch (starRating) {
+    case "FIVE": return 5;
+    case "FOUR": return 4;
+    case "THREE": return 3;
+    case "TWO": return 2;
+    case "ONE": return 1;
+    default: return 0;
+  }
+}
+
 export default function Page() {
   const { customerId, loading: customerLoading, error: customerError } = useCustomer();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // 可以再加條件/篩選用 state，這裡先省略
 
   useEffect(() => {
     if (!customerId) return;
@@ -65,18 +75,16 @@ export default function Page() {
                 <div key={r.reviewId || i} className="reviews-list-item">
                   <div className="reviews-avatar"
                     style={{
-                      backgroundImage: r.reviewer?.profilePhotoUrl ? `url(${r.reviewer.profilePhotoUrl})` : undefined,
+                      backgroundImage: r.profilePhotoUrl ? `url(${r.profilePhotoUrl})` : undefined,
                       backgroundSize: "cover"
                     }}
                   ></div>
                   <div className="reviews-item-content">
                     <div className="reviews-author">
-                      {r.reviewer?.displayName || "匿名"}
-                      {r.starRating && (
-                        <span style={{ marginLeft: 8, color: "#faad14" }}>
-                          {"★".repeat(Number(r.starRating[0]) || 0)}
-                        </span>
-                      )}
+                      {r.displayName || "匿名"}
+                      <span style={{ marginLeft: 8, color: "#faad14" }}>
+                        {"★".repeat(getStarNum(r.starRating))}
+                      </span>
                     </div>
                     <div className="reviews-snippet">
                       {r.comment?.slice(0, 40) || "（無內容）"}
