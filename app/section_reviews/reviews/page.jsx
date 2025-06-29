@@ -14,7 +14,7 @@ export default function Page() {
   useEffect(() => {
     if (!customerId) return;
     setLoading(true);
-    fetch(`/api/reviews?customer_id=${customerId}`)
+    fetch(`/api/auth/reviews?customer_id=${customerId}`)
       .then(res => res.json())
       .then(data => {
         setReviews(data.reviews || []);
