@@ -1,4 +1,4 @@
-// app/api/reviews/route.js
+// app/api/auth/reviews/route.js
 import { NextResponse } from 'next/server'
 import { BigQuery } from '@google-cloud/bigquery'
 import fs from 'fs'
@@ -19,13 +19,24 @@ const bigquery = new BigQuery({
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const customer_id = searchParams.get('customer_id')
-  // 可選擇地點過濾
-  // const locationId = searchParams.get('location_id')
+  const start = searchParams.get('start')
+  const end = searchParams.get('end')
+  // const locationId = searchParams.get('location_id') // 之後可加
 
   if (!customer_id) {
     return NextResponse.json({ error: '缺少 customer_id' }, { status: 400 })
   }
+  if (!start || !end) {
+    return NextResponse.json({ error: '缺少日期區間 (start, end)' }, { status: 400 })
+  }
 
+  // 強制格式檢查 YYYY-MM-DD
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+  if (!dateRegex.test(start) || !dateRegex.test(end)) {
+    return NextResponse.json({ error: '日期格式錯誤，須為 YYYY-MM-DD' }, { status: 400 })
+  }
+
+  // 用 createTime_ts 分區
   const sql = `
     SELECT
       reviewId,
@@ -39,9 +50,11 @@ export async function GET(request) {
       locationId,
       accountId,
       deleted
-    FROM \`gbp-management-marptek.gbp_review.reviews_final\`
+    FROM \`gbp-management-marptek.gbp_review.reviews_final_p\`
     WHERE customer_id = @customer_id
       AND (deleted IS NULL OR deleted = FALSE)
+      AND DATE(createTime_ts) >= @start
+      AND DATE(createTime_ts) < @end
     ORDER BY createTime DESC
     LIMIT 50
   `
@@ -49,7 +62,11 @@ export async function GET(request) {
   try {
     const [rows] = await bigquery.query({
       query: sql,
-      params: { customer_id }
+      params: {
+        customer_id,
+        start,
+        end,
+      },
     })
     return NextResponse.json({ reviews: rows })
   } catch (err) {

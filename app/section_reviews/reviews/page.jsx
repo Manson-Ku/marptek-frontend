@@ -16,24 +16,49 @@ function getStarNum(starRating) {
   }
 }
 
+// 工具：今天日期（YYYY-MM-DD）
+function getTodayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+// 工具：昨天日期（YYYY-MM-DD）
+function getYesterdayStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+// 工具：N 天前日期（YYYY-MM-DD）
+function getNDaysAgoStr(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
 export default function Page() {
   const { customerId, loading: customerLoading } = useCustomer();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedReview, setSelectedReview] = useState(null); // <--- 新增
+  const [selectedReview, setSelectedReview] = useState(null);
 
+  // 日期區間 state
+  const [startDate, setStartDate] = useState(getNDaysAgoStr(30)); // 預設30天前
+  const [endDate, setEndDate] = useState(getYesterdayStr()); // 預設昨天
+
+  // 日期input最大值
+  const maxDate = getYesterdayStr();
+
+  // 拉評論
   useEffect(() => {
-    if (!customerId) return;
+    if (!customerId || !startDate || !endDate) return;
     setLoading(true);
-    fetch(`/api/auth/reviews?customer_id=${customerId}`)
+    fetch(`/api/auth/reviews?customer_id=${customerId}&start=${startDate}&end=${endDate}`)
       .then(res => res.json())
       .then(data => {
         setReviews(data.reviews || []);
         setLoading(false);
-        setSelectedReview((data.reviews && data.reviews[0]) || null); // 預設選第一筆
+        setSelectedReview((data.reviews && data.reviews[0]) || null);
       })
       .catch(() => setLoading(false));
-  }, [customerId]);
+  }, [customerId, startDate, endDate]);
 
   return (
     <AuthenticatedLayout noContainer>
@@ -42,9 +67,29 @@ export default function Page() {
         <aside className="reviews-sidebar">
           <div className="reviews-sidebar-header">Reviews</div>
           <div className="reviews-sidebar-content">
-            <div className="reviews-date-range">
-              <div className="reviews-date-label">2024-12-21 ~ 2025-06-21</div>
-              <button className="reviews-date-btn">更改日期</button>
+            <div className="reviews-date-range" style={{ flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
+              <label style={{ fontSize: 13, color: "#555", marginBottom: 3 }}>評論查詢區間：</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <input
+                  type="date"
+                  value={startDate}
+                  max={endDate}
+                  onChange={e => setStartDate(e.target.value)}
+                  style={{ fontSize: 13, border: "1px solid #d6d6d6", borderRadius: 4, padding: 3, width: 110 }}
+                />
+                <span style={{ margin: "0 2px" }}>~</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  min={startDate}
+                  max={maxDate}
+                  onChange={e => setEndDate(e.target.value)}
+                  style={{ fontSize: 13, border: "1px solid #d6d6d6", borderRadius: 4, padding: 3, width: 110 }}
+                />
+              </div>
+              <div style={{ fontSize: 12, color: "#b2b2b2", marginTop: 3 }}>
+                （結束日「不含當天」，最大只能到昨天）
+              </div>
             </div>
             <ul className="reviews-folder-list">
               <li className="active">All Reviews <span>{reviews.length}</span></li>
