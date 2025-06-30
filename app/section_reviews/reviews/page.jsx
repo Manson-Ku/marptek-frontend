@@ -16,7 +16,7 @@ function getStarNum(starRating) {
   }
 }
 
-// 日期字串工具
+// 日期工具
 function getYesterdayStr() {
   const d = new Date();
   d.setDate(d.getDate() - 1);
@@ -44,37 +44,31 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [selectedReview, setSelectedReview] = useState(null);
 
-  // 新增群組/地點選單
+  // 下拉選單用
   const [accountName, setAccountName] = useState("");
   const [locationName, setLocationName] = useState("");
-  const [accountOptions, setAccountOptions] = useState([]);
-  const [locationOptions, setLocationOptions] = useState([]);
+  const [allAccountNames, setAllAccountNames] = useState([]);
+  const [allLocationNames, setAllLocationNames] = useState([]);
+  const [accountLocationsMap, setAccountLocationsMap] = useState({});
 
   // 日期區間
   const [startDate, setStartDate] = useState(getNDaysAgoStr(30));
   const [endDate, setEndDate] = useState(getYesterdayStr());
   const maxDate = getYesterdayStr();
 
-  // 1. 載入所有 accountOptions
+  // 載入下拉選單 options
   useEffect(() => {
     if (!customerId) return;
-    // 簡易抓 reviews_final_p 中所有 account_name
-    fetch(`/api/auth/reviews/accounts?customer_id=${customerId}`)
+    fetch(`/api/auth/reviews?all_names=1&customer_id=${customerId}`)
       .then(res => res.json())
-      .then(data => setAccountOptions(data.accounts || []));
+      .then(data => {
+        setAllAccountNames(data.all_account_names || []);
+        setAllLocationNames(data.all_location_names || []);
+        setAccountLocationsMap(data.account_locations_map || {});
+      });
   }, [customerId]);
 
-  // 2. 依所選 accountName 載入地點
-  useEffect(() => {
-    if (!customerId) return;
-    let url = `/api/auth/reviews/locations?customer_id=${customerId}`;
-    if (accountName) url += `&account_name=${encodeURIComponent(accountName)}`;
-    fetch(url)
-      .then(res => res.json())
-      .then(data => setLocationOptions(data.locations || []));
-  }, [customerId, accountName]);
-
-  // 3. 查詢評論
+  // 查詢評論
   useEffect(() => {
     if (!customerId || !startDate || !endDate) return;
     setLoading(true);
@@ -92,8 +86,10 @@ export default function Page() {
       .catch(() => setLoading(false));
   }, [customerId, startDate, endDate, accountName, locationName]);
 
-  // 只顯示當前群組下地點
-  const filteredLocationOptions = locationOptions.filter(opt => !accountName || opt.account_name === accountName);
+  // 動態地點 options
+  const filteredLocationOptions = accountName
+    ? (accountLocationsMap[accountName] || [])
+    : allLocationNames;
 
   return (
     <AuthenticatedLayout noContainer>
@@ -110,15 +106,13 @@ export default function Page() {
                 value={accountName}
                 onChange={e => {
                   setAccountName(e.target.value);
-                  setLocationName(""); // 選了群組時重設地點
+                  setLocationName(""); // 選群組時重設地點
                 }}
                 style={{ width: "100%", fontSize: 13, border: "1px solid #d6d6d6", borderRadius: 4, padding: 3 }}
               >
                 <option value="">全部群組</option>
-                {accountOptions.map(opt =>
-                  <option key={opt.account_name} value={opt.account_name}>
-                    {opt.account_name}
-                  </option>
+                {allAccountNames.map(opt =>
+                  <option key={opt} value={opt}>{opt}</option>
                 )}
               </select>
             </div>
@@ -133,9 +127,7 @@ export default function Page() {
               >
                 <option value="">全部地點</option>
                 {filteredLocationOptions.map(opt =>
-                  <option key={opt.location_name} value={opt.location_name}>
-                    {opt.location_name}
-                  </option>
+                  <option key={opt} value={opt}>{opt}</option>
                 )}
               </select>
             </div>
