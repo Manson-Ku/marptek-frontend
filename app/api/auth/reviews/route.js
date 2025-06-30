@@ -40,24 +40,24 @@ export async function GET(request) {
   const sql = `
     SELECT
       reviewId,
-      reviewer.displayName,
-      reviewer.profilePhotoUrl,
+      displayName,
+      profilePhotoUrl,
       starRating,
       comment,
-      createTime,
-      reviewReply.comment AS replyComment,
-      reviewReply.updateTime AS replyUpdateTime,
+      createTime_ts,
+      reviewReplyComment AS replyComment,
+      reviewReplyUpdateTime AS replyUpdateTime,
       locationId,
       accountId,
       deleted
     FROM \`gbp-management-marptek.gbp_review.reviews_final_p\`
     WHERE customer_id = @customer_id
+      AND createTime_ts >= @start
+      AND createTime_ts < @end
       AND (deleted IS NULL OR deleted = FALSE)
-      AND DATE(createTime_ts) >= @start
-      AND DATE(createTime_ts) < @end
-    ORDER BY createTime DESC
+    ORDER BY createTime_ts DESC
     LIMIT 50
-  `
+  `;
 
   try {
     const [rows] = await bigquery.query({

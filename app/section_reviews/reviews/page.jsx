@@ -143,7 +143,7 @@ export default function Page() {
                     </div>
                   </div>
                   <div className="reviews-date">
-                    {r.createTime ? r.createTime.split("T")[0] : "--"}
+                    {r.createTime_ts ? r.createTime_ts.slice(0, 10) : "--"}
                   </div>
                 </div>
               ))
@@ -162,7 +162,7 @@ export default function Page() {
                     {"★".repeat(getStarNum(selectedReview.starRating))}
                   </span>
                   <span style={{ color: "#b7b7b7", marginLeft: 16, fontSize: "0.98rem" }}>
-                    {selectedReview.createTime ? selectedReview.createTime.replace("T", " ").split(".")[0] : ""}
+                     {selectedReview.createTime_ts ? selectedReview.createTime_ts.replace("T", " ").split(".")[0] : ""}
                   </span>
                 </div>
                 <div className="reviews-detail-text" style={{ margin: "12px 0 0 0" }}>
