@@ -16,21 +16,32 @@ function getStarNum(starRating) {
   }
 }
 
-// 工具：今天日期（YYYY-MM-DD）
+// 日期字串工具
 function getTodayStr() {
   return new Date().toISOString().slice(0, 10);
 }
-// 工具：昨天日期（YYYY-MM-DD）
 function getYesterdayStr() {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   return d.toISOString().slice(0, 10);
 }
-// 工具：N 天前日期（YYYY-MM-DD）
 function getNDaysAgoStr(n) {
   const d = new Date();
   d.setDate(d.getDate() - n);
   return d.toISOString().slice(0, 10);
+}
+
+// 處理 BigQuery timestamp/date 兼容所有情境
+function formatDate(ts) {
+  if (!ts) return "--";
+  // 1. BigQuery timestamp 可能回傳 string、Date、或 { value: string }
+  if (typeof ts === "object") {
+    if (ts.value) ts = ts.value;
+    else if (ts instanceof Date) ts = ts.toISOString();
+    else return "--";
+  }
+  if (typeof ts === "string") return ts.split("T")[0];
+  return "--";
 }
 
 export default function Page() {
@@ -40,13 +51,10 @@ export default function Page() {
   const [selectedReview, setSelectedReview] = useState(null);
 
   // 日期區間 state
-  const [startDate, setStartDate] = useState(getNDaysAgoStr(30)); // 預設30天前
-  const [endDate, setEndDate] = useState(getYesterdayStr()); // 預設昨天
-
-  // 日期input最大值
+  const [startDate, setStartDate] = useState(getNDaysAgoStr(30));
+  const [endDate, setEndDate] = useState(getYesterdayStr());
   const maxDate = getYesterdayStr();
 
-  // 拉評論
   useEffect(() => {
     if (!customerId || !startDate || !endDate) return;
     setLoading(true);
@@ -143,7 +151,7 @@ export default function Page() {
                     </div>
                   </div>
                   <div className="reviews-date">
-                    {r.createTime_ts ? r.createTime_ts.slice(0, 10) : "--"}
+                    {formatDate(r.createTime_ts)}
                   </div>
                 </div>
               ))
@@ -162,7 +170,7 @@ export default function Page() {
                     {"★".repeat(getStarNum(selectedReview.starRating))}
                   </span>
                   <span style={{ color: "#b7b7b7", marginLeft: 16, fontSize: "0.98rem" }}>
-                     {selectedReview.createTime_ts ? selectedReview.createTime_ts.replace("T", " ").split(".")[0] : ""}
+                    {formatDate(selectedReview.createTime_ts)}
                   </span>
                 </div>
                 <div className="reviews-detail-text" style={{ margin: "12px 0 0 0" }}>
@@ -186,7 +194,8 @@ export default function Page() {
                     上次回覆：{selectedReview.replyComment}
                     {selectedReview.replyUpdateTime &&
                       <span style={{ marginLeft: 10, color: "#b7b7b7" }}>
-                        ({selectedReview.replyUpdateTime.replace("T", " ").split(".")[0]})
+                        {/* 如果 replyUpdateTime 也是 timestamp，可再用 formatDate 處理 */}
+                        {formatDate(selectedReview.replyUpdateTime)}
                       </span>}
                   </div>
                 )}
