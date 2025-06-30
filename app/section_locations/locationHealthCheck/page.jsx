@@ -2,7 +2,15 @@
 import { useEffect, useState } from "react";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import { useCustomer } from "@/context/CustomerContext";
-import "./locationHealthCheck.css"; // 你自訂即可
+import "./locationHealthCheck.css";
+
+function formatDate(ts) {
+  if (!ts) return "--";
+  if (typeof ts === "string") return ts.split("T")[0];
+  if (typeof ts === "object" && ts.value) return String(ts.value).split("T")[0];
+  if (ts instanceof Date) return ts.toISOString().split("T")[0];
+  return "--";
+}
 
 function calcNAPScore(loc) {
   let score = 0;
@@ -153,7 +161,7 @@ export default function LocationHealthCheckPage() {
                     ? <a href={selectedLoc.metadata.mapsUri} target="_blank" rel="noopener noreferrer">Google Maps</a>
                     : <span className="lhc-warn">（缺連結）</span>}
                 </div>
-                <div>最後同步：{selectedLoc.upd_datetime ? selectedLoc.upd_datetime.split("T")[0] : "--"}</div>
+                <div>最後同步：{formatDate(selectedLoc.upd_datetime)}</div>
               </div>
             </>
           ) : (
