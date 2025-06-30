@@ -51,6 +51,9 @@ export default function Page() {
   const [allLocationNames, setAllLocationNames] = useState([]);
   const [accountLocationsMap, setAccountLocationsMap] = useState({});
 
+  // 地點搜尋用
+  const [locationSearch, setLocationSearch] = useState("");
+
   // 日期區間
   const [startDate, setStartDate] = useState(getNDaysAgoStr(30));
   const [endDate, setEndDate] = useState(getYesterdayStr());
@@ -86,10 +89,22 @@ export default function Page() {
       .catch(() => setLoading(false));
   }, [customerId, startDate, endDate, accountName, locationName]);
 
-  // 動態地點 options
-  const filteredLocationOptions = accountName
+  // 動態地點 options，先依群組過濾，再依輸入搜尋
+  let filteredLocationOptions = accountName
     ? (accountLocationsMap[accountName] || [])
     : allLocationNames;
+  if (locationSearch) {
+    const search = locationSearch.trim();
+    filteredLocationOptions = filteredLocationOptions.filter(opt => opt.includes(search));
+  }
+
+  // 取得該地點所有群組（右側詳情用）
+  function getAllGroupsOfLocation(locationName) {
+    if (!locationName) return [];
+    return Object.entries(accountLocationsMap)
+      .filter(([account, locs]) => locs.includes(locationName))
+      .map(([account]) => account);
+  }
 
   return (
     <AuthenticatedLayout noContainer>
@@ -107,6 +122,7 @@ export default function Page() {
                 onChange={e => {
                   setAccountName(e.target.value);
                   setLocationName(""); // 選群組時重設地點
+                  setLocationSearch(""); // 清空地點搜尋
                 }}
                 style={{ width: "100%", fontSize: 13, border: "1px solid #d6d6d6", borderRadius: 4, padding: 3 }}
               >
@@ -117,9 +133,24 @@ export default function Page() {
               </select>
             </div>
 
-            {/* 地點名稱 */}
+            {/* 地點名稱＋搜尋 */}
             <div style={{ marginBottom: 10 }}>
               <label style={{ fontSize: 13, color: "#555", marginBottom: 2 }}>地點名稱</label>
+              {/* 搜尋框 */}
+              <input
+                type="text"
+                placeholder="搜尋地點名稱"
+                value={locationSearch}
+                onChange={e => setLocationSearch(e.target.value)}
+                style={{
+                  width: "100%",
+                  fontSize: 12,
+                  border: "1px solid #d6d6d6",
+                  borderRadius: 4,
+                  padding: 3,
+                  marginBottom: 4
+                }}
+              />
               <select
                 value={locationName}
                 onChange={e => setLocationName(e.target.value)}
@@ -222,6 +253,35 @@ export default function Page() {
         <section className="reviews-detail">
           {selectedReview ? (
             <>
+              {/* === 新增：所有群組與地點顯示 === */}
+              <div style={{
+                margin: "6px 0 8px 0",
+                fontSize: "0.98rem",
+                color: "#333",
+                background: "#f8f9fa",
+                borderRadius: 5,
+                padding: "7px 12px"
+              }}>
+                <div>
+                  <span style={{ color: "#777" }}>地點名稱：</span>
+                  <b>{selectedReview.location_name || "未知"}</b>
+                </div>
+                <div style={{ marginTop: 2 }}>
+                  <span style={{ color: "#777" }}>地區群組：</span>
+                  {getAllGroupsOfLocation(selectedReview.location_name).map((group, idx, arr) => (
+                    <span
+                      key={group}
+                      style={{
+                        fontWeight: group === selectedReview.account_name ? "bold" : "normal",
+                        color: group === selectedReview.account_name ? "#2a6ebb" : "#888",
+                        marginRight: 6
+                      }}>
+                      {group}{idx < arr.length - 1 ? "、" : ""}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              {/* === 其餘詳情不變 === */}
               <div className="reviews-detail-header">
                 <div className="reviews-detail-title">
                   {selectedReview.displayName || "匿名"}
