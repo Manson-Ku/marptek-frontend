@@ -15,9 +15,18 @@ function getStarNum(starRating) {
     default: return 0;
   }
 }
-function getTodayStr() { return new Date().toISOString().slice(0, 10); }
-function getYesterdayStr() { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().slice(0, 10); }
-function getNDaysAgoStr(n) { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); }
+
+// 日期字串工具
+function getYesterdayStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+function getNDaysAgoStr(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
 function formatDate(ts) {
   if (!ts) return "--";
   if (typeof ts === "object") {
@@ -35,52 +44,44 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [selectedReview, setSelectedReview] = useState(null);
 
-  // 查詢條件
+  // 新增群組/地點選單
+  const [accountName, setAccountName] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [accountOptions, setAccountOptions] = useState([]);
+  const [locationOptions, setLocationOptions] = useState([]);
+
+  // 日期區間
   const [startDate, setStartDate] = useState(getNDaysAgoStr(30));
   const [endDate, setEndDate] = useState(getYesterdayStr());
   const maxDate = getYesterdayStr();
-  const [accountName, setAccountName] = useState("");
-  const [locationName, setLocationName] = useState("");
 
-  // 可選擇的群組/地點
-  const [accountNames, setAccountNames] = useState([]);
-  const [locationNames, setLocationNames] = useState([]);
-  const [accountLocationsMap, setAccountLocationsMap] = useState({}); // 交互用
-
-  // 1. 載入可用 account/location（只查一次）
+  // 1. 載入所有 accountOptions
   useEffect(() => {
     if (!customerId) return;
-    fetch(`/api/auth/reviews?customer_id=${customerId}&all_names=1`)
+    // 簡易抓 reviews_final_p 中所有 account_name
+    fetch(`/api/auth/reviews/accounts?customer_id=${customerId}`)
       .then(res => res.json())
-      .then(data => {
-        setAccountNames([...new Set((data.all_account_names || []).filter(Boolean))]);
-        setLocationNames([...new Set((data.all_location_names || []).filter(Boolean))]);
-
-        // 若有提供交互 map（最佳），優先用，不然自己組
-        if (data.account_locations_map) {
-          setAccountLocationsMap(data.account_locations_map);
-        } else if (data.account_location_pairs) {
-          // 後端回傳 account-location 對應
-          const map = {};
-          data.account_location_pairs.forEach(([a, l]) => {
-            if (!map[a]) map[a] = [];
-            map[a].push(l);
-          });
-          setAccountLocationsMap(map);
-        } else if (data.account_location_full) {
-          // 備用結構
-          setAccountLocationsMap(data.account_location_full);
-        }
-      });
+      .then(data => setAccountOptions(data.accounts || []));
   }, [customerId]);
 
-  // 2. 查詢評論（任何一個查詢條件變動都重查）
+  // 2. 依所選 accountName 載入地點
+  useEffect(() => {
+    if (!customerId) return;
+    let url = `/api/auth/reviews/locations?customer_id=${customerId}`;
+    if (accountName) url += `&account_name=${encodeURIComponent(accountName)}`;
+    fetch(url)
+      .then(res => res.json())
+      .then(data => setLocationOptions(data.locations || []));
+  }, [customerId, accountName]);
+
+  // 3. 查詢評論
   useEffect(() => {
     if (!customerId || !startDate || !endDate) return;
     setLoading(true);
     let url = `/api/auth/reviews?customer_id=${customerId}&start=${startDate}&end=${endDate}`;
     if (accountName) url += `&account_name=${encodeURIComponent(accountName)}`;
     if (locationName) url += `&location_name=${encodeURIComponent(locationName)}`;
+
     fetch(url)
       .then(res => res.json())
       .then(data => {
@@ -91,15 +92,8 @@ export default function Page() {
       .catch(() => setLoading(false));
   }, [customerId, startDate, endDate, accountName, locationName]);
 
-  // 3. 地區群組變動時，自動重設地點名稱
-  useEffect(() => {
-    setLocationName(""); // 每次切換群組自動 reset 地點
-  }, [accountName]);
-
-  // 4. 根據目前選到的 accountName，決定顯示哪些地點
-  const filteredLocationNames = accountName
-    ? (accountLocationsMap[accountName] || [])
-    : locationNames;
+  // 只顯示當前群組下地點
+  const filteredLocationOptions = locationOptions.filter(opt => !accountName || opt.account_name === accountName);
 
   return (
     <AuthenticatedLayout noContainer>
@@ -108,32 +102,45 @@ export default function Page() {
         <aside className="reviews-sidebar">
           <div className="reviews-sidebar-header">Reviews</div>
           <div className="reviews-sidebar-content">
-            {/* 新增兩個下拉篩選 */}
-            <div style={{ width: "100%", marginBottom: 12 }}>
-              <label style={{ fontSize: 13, color: "#555", marginBottom: 2, display: "block" }}>地區群組</label>
+
+            {/* 地區群組 */}
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 13, color: "#555", marginBottom: 2 }}>地區群組</label>
               <select
                 value={accountName}
-                onChange={e => setAccountName(e.target.value)}
-                style={{ width: "100%", fontSize: 13, padding: 4, borderRadius: 4, marginBottom: 6 }}
+                onChange={e => {
+                  setAccountName(e.target.value);
+                  setLocationName(""); // 選了群組時重設地點
+                }}
+                style={{ width: "100%", fontSize: 13, border: "1px solid #d6d6d6", borderRadius: 4, padding: 3 }}
               >
                 <option value="">全部群組</option>
-                {accountNames.map(name =>
-                  <option key={name} value={name}>{name}</option>
-                )}
-              </select>
-              <label style={{ fontSize: 13, color: "#555", marginBottom: 2, display: "block" }}>地點名稱</label>
-              <select
-                value={locationName}
-                onChange={e => setLocationName(e.target.value)}
-                style={{ width: "100%", fontSize: 13, padding: 4, borderRadius: 4 }}
-                disabled={accountName && filteredLocationNames.length === 0}
-              >
-                <option value="">全部地點</option>
-                {filteredLocationNames.map(l =>
-                  <option key={l} value={l}>{l}</option>
+                {accountOptions.map(opt =>
+                  <option key={opt.account_name} value={opt.account_name}>
+                    {opt.account_name}
+                  </option>
                 )}
               </select>
             </div>
+
+            {/* 地點名稱 */}
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 13, color: "#555", marginBottom: 2 }}>地點名稱</label>
+              <select
+                value={locationName}
+                onChange={e => setLocationName(e.target.value)}
+                style={{ width: "100%", fontSize: 13, border: "1px solid #d6d6d6", borderRadius: 4, padding: 3 }}
+              >
+                <option value="">全部地點</option>
+                {filteredLocationOptions.map(opt =>
+                  <option key={opt.location_name} value={opt.location_name}>
+                    {opt.location_name}
+                  </option>
+                )}
+              </select>
+            </div>
+
+            {/* 日期區間 */}
             <div className="reviews-date-range" style={{ flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
               <label style={{ fontSize: 13, color: "#555", marginBottom: 3 }}>評論查詢區間：</label>
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -158,6 +165,7 @@ export default function Page() {
                 （結束日「不含當天」，最大只能到昨天）
               </div>
             </div>
+
             <ul className="reviews-folder-list">
               <li className="active">All Reviews <span>{reviews.length}</span></li>
               <li>Open <span>--</span></li>
@@ -208,9 +216,6 @@ export default function Page() {
                     <div className="reviews-snippet">
                       {r.comment?.slice(0, 40) || "（無內容）"}
                     </div>
-                    <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
-                      {r.account_name && `[${r.account_name}]`} {r.location_name}
-                    </div>
                   </div>
                   <div className="reviews-date">
                     {formatDate(r.createTime_ts)}
@@ -234,9 +239,6 @@ export default function Page() {
                   <span style={{ color: "#b7b7b7", marginLeft: 16, fontSize: "0.98rem" }}>
                     {formatDate(selectedReview.createTime_ts)}
                   </span>
-                </div>
-                <div style={{ margin: "6px 0", color: "#888", fontSize: 14 }}>
-                  {selectedReview.account_name && `[${selectedReview.account_name}]`} {selectedReview.location_name}
                 </div>
                 <div className="reviews-detail-text" style={{ margin: "12px 0 0 0" }}>
                   {selectedReview.comment || <span style={{ color: "#bbb" }}>（無評論內容）</span>}
