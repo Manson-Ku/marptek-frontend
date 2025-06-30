@@ -29,11 +29,12 @@ export async function GET(request) {
     return NextResponse.json({ error: '缺少日期區間 (start, end)' }, { status: 400 })
   }
 
+  // 關鍵改動: 用 DISTINCT reviewId 計算
   let sql = `
     SELECT
-      COUNT(*) AS total,
-      COUNTIF(reviewReply.comment IS NOT NULL AND reviewReply.comment != "") AS replied,
-      COUNTIF(reviewReply.comment IS NULL OR reviewReply.comment = "") AS unreplied
+      COUNT(DISTINCT reviewId) AS total,
+      COUNT(DISTINCT IF(reviewReply.comment IS NOT NULL AND reviewReply.comment != "", reviewId, NULL)) AS replied,
+      COUNT(DISTINCT IF(reviewReply.comment IS NULL OR reviewReply.comment = "", reviewId, NULL)) AS unreplied
     FROM \`gbp-management-marptek.gbp_review.reviews_final_p\`
     WHERE customer_id = @customer_id
       AND createTime_ts >= @start
@@ -52,7 +53,6 @@ export async function GET(request) {
 
   try {
     const [rows] = await bigquery.query({ query: sql, params })
-    // rows[0] 會是 { total, replied, unreplied }
     return NextResponse.json(rows[0])
   } catch (err) {
     console.error('[BQ ERROR][SUMMARY]', err.message, { customer_id, start, end, account_name, location_name })
