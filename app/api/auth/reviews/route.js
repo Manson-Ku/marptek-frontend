@@ -28,8 +28,8 @@ export async function GET(request) {
     return NextResponse.json({ error: '缺少 customer_id' }, { status: 400 })
   }
 
-  // 查詢所有可選群組/地點名稱
   if (all_names === "1") {
+    // 查詢所有 account/location 組合
     const sql_names = `
       SELECT DISTINCT account_name, location_name
       FROM \`gbp-management-marptek.gbp_review.reviews_final_p\`
@@ -41,15 +41,18 @@ export async function GET(request) {
     });
     const all_account_names = [...new Set(rows.map(r => r.account_name).filter(Boolean))];
     const all_location_names = [...new Set(rows.map(r => r.location_name).filter(Boolean))];
-    return NextResponse.json({ all_account_names, all_location_names });
-  }
-
-  if (!start || !end) {
-    return NextResponse.json({ error: '缺少日期區間 (start, end)' }, { status: 400 })
-  }
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!dateRegex.test(start) || !dateRegex.test(end)) {
-    return NextResponse.json({ error: '日期格式錯誤，須為 YYYY-MM-DD' }, { status: 400 })
+    // 建立交互用 Map: account_name -> location_name[]
+    const account_locations_map = {};
+    rows.forEach(r => {
+      if (!r.account_name || !r.location_name) return;
+      if (!account_locations_map[r.account_name]) account_locations_map[r.account_name] = [];
+      account_locations_map[r.account_name].push(r.location_name);
+    });
+    // 去重
+    Object.keys(account_locations_map).forEach(k => {
+      account_locations_map[k] = [...new Set(account_locations_map[k])];
+    });
+    return NextResponse.json({ all_account_names, all_location_names, account_locations_map });
   }
 
   // 查詢評論資料

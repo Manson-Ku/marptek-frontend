@@ -39,27 +39,42 @@ export default function Page() {
   const [startDate, setStartDate] = useState(getNDaysAgoStr(30));
   const [endDate, setEndDate] = useState(getYesterdayStr());
   const maxDate = getYesterdayStr();
-  const [accountName, setAccountName] = useState(""); // 新增地區群組
-  const [locationName, setLocationName] = useState(""); // 新增地點名稱
+  const [accountName, setAccountName] = useState("");
+  const [locationName, setLocationName] = useState("");
 
   // 可選擇的群組/地點
   const [accountNames, setAccountNames] = useState([]);
   const [locationNames, setLocationNames] = useState([]);
+  const [accountLocationsMap, setAccountLocationsMap] = useState({}); // 交互用
 
-  // 只查一次所有 account/location name
+  // 1. 載入可用 account/location（只查一次）
   useEffect(() => {
     if (!customerId) return;
-    fetch(`/api/auth/reviews?customer_id=${customerId}&start=${startDate}&end=${endDate}&all_names=1`)
+    fetch(`/api/auth/reviews?customer_id=${customerId}&all_names=1`)
       .then(res => res.json())
       .then(data => {
-        // 這邊 reviews 只用來取可選群組/地點清單，不顯示清單內容
         setAccountNames([...new Set((data.all_account_names || []).filter(Boolean))]);
         setLocationNames([...new Set((data.all_location_names || []).filter(Boolean))]);
-      });
-    // eslint-disable-next-line
-  }, [customerId]); // 只要 customerId 變就重查，減少 reload
 
-  // 查詢評論
+        // 若有提供交互 map（最佳），優先用，不然自己組
+        if (data.account_locations_map) {
+          setAccountLocationsMap(data.account_locations_map);
+        } else if (data.account_location_pairs) {
+          // 後端回傳 account-location 對應
+          const map = {};
+          data.account_location_pairs.forEach(([a, l]) => {
+            if (!map[a]) map[a] = [];
+            map[a].push(l);
+          });
+          setAccountLocationsMap(map);
+        } else if (data.account_location_full) {
+          // 備用結構
+          setAccountLocationsMap(data.account_location_full);
+        }
+      });
+  }, [customerId]);
+
+  // 2. 查詢評論（任何一個查詢條件變動都重查）
   useEffect(() => {
     if (!customerId || !startDate || !endDate) return;
     setLoading(true);
@@ -76,6 +91,16 @@ export default function Page() {
       .catch(() => setLoading(false));
   }, [customerId, startDate, endDate, accountName, locationName]);
 
+  // 3. 地區群組變動時，自動重設地點名稱
+  useEffect(() => {
+    setLocationName(""); // 每次切換群組自動 reset 地點
+  }, [accountName]);
+
+  // 4. 根據目前選到的 accountName，決定顯示哪些地點
+  const filteredLocationNames = accountName
+    ? (accountLocationsMap[accountName] || [])
+    : locationNames;
+
   return (
     <AuthenticatedLayout noContainer>
       <div className="reviews-container">
@@ -88,7 +113,7 @@ export default function Page() {
               <label style={{ fontSize: 13, color: "#555", marginBottom: 2, display: "block" }}>地區群組</label>
               <select
                 value={accountName}
-                onChange={e => { setAccountName(e.target.value); setLocationName(""); }}
+                onChange={e => setAccountName(e.target.value)}
                 style={{ width: "100%", fontSize: 13, padding: 4, borderRadius: 4, marginBottom: 6 }}
               >
                 <option value="">全部群組</option>
@@ -101,11 +126,10 @@ export default function Page() {
                 value={locationName}
                 onChange={e => setLocationName(e.target.value)}
                 style={{ width: "100%", fontSize: 13, padding: 4, borderRadius: 4 }}
-                disabled={!accountName && locationNames.length === 0} // 無 account_name 不可選
+                disabled={accountName && filteredLocationNames.length === 0}
               >
                 <option value="">全部地點</option>
-                {/* 若有選 accountName，僅顯示該群組下的地點 */}
-                {locationNames.filter(l => !accountName || reviews.some(r => r.account_name === accountName && r.location_name === l)).map(l =>
+                {filteredLocationNames.map(l =>
                   <option key={l} value={l}>{l}</option>
                 )}
               </select>
