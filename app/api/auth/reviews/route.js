@@ -1,15 +1,14 @@
+// app/api/auth/reviews/route.js
 import { NextResponse } from 'next/server'
 import { BigQuery } from '@google-cloud/bigquery'
 import fs from 'fs'
 
 const saJsonBase64 = process.env.GCP_SA_JSON
 const tmpPath = '/tmp/sa-key.json'
-
 if (!fs.existsSync(tmpPath)) {
   const saJson = Buffer.from(saJsonBase64, 'base64').toString('utf-8')
   fs.writeFileSync(tmpPath, saJson)
 }
-
 const bigquery = new BigQuery({
   keyFilename: tmpPath,
   projectId: 'gbp-management-marptek',
@@ -23,21 +22,21 @@ export async function GET(request) {
   const account_name = searchParams.get('account_name')
   const location_name = searchParams.get('location_name')
   const all_names = searchParams.get('all_names')
+  // 分頁
+  const offset = Number(searchParams.get('offset') || 0)
+  const limit = Math.min(Number(searchParams.get('limit') || 50), 200)
+  // 回覆篩選
+  const reply_filter = searchParams.get('reply_filter') // all, replied, unreplied
 
-  // 解析分頁參數
-  const offset = Math.max(0, Number(searchParams.get('offset')) || 0)
-  const limit = Math.min(Math.max(Number(searchParams.get('limit')) || 50, 1), 200) // 1~200
-
-  // 必要參數檢查
+  // ======= 必要參數檢查 =======
   if (!customer_id) {
     return NextResponse.json({ error: '缺少 customer_id' }, { status: 400 })
   }
-  // names 模式不需要 start/end
   if (!all_names && (!start || !end)) {
     return NextResponse.json({ error: '缺少日期區間 (start, end)' }, { status: 400 })
   }
 
-  // -------- names selector 模式：查詢所有群組/地點清單 --------
+  // ======= names selector (下拉專用) =======
   if (all_names === "1") {
     try {
       const sql_names = `
@@ -68,7 +67,7 @@ export async function GET(request) {
     }
   }
 
-  // -------- 主查詢（支援分頁、篩選） --------
+  // ======= 查詢評論（支援分頁與回覆篩選） =======
   let sql = `
     SELECT
       reviewId,
@@ -89,17 +88,22 @@ export async function GET(request) {
       AND createTime_ts >= @start
       AND createTime_ts < @end
       AND (deleted IS NULL OR deleted = FALSE)
-  `;
-  // 篩選參數
+  `
+  // 可選篩選條件
   const params = { customer_id, start, end, limit, offset };
-
   if (account_name) {
-    sql += ` AND account_name = @account_name `;
+    sql += ` AND account_name = @account_name `
     params.account_name = account_name;
   }
   if (location_name) {
-    sql += ` AND location_name = @location_name `;
+    sql += ` AND location_name = @location_name `
     params.location_name = location_name;
+  }
+  if (reply_filter === "replied") {
+    sql += ` AND reviewReply.comment IS NOT NULL AND reviewReply.comment != "" `
+  }
+  if (reply_filter === "unreplied") {
+    sql += ` AND (reviewReply.comment IS NULL OR reviewReply.comment = "") `
   }
   sql += ` ORDER BY createTime_ts DESC LIMIT @limit OFFSET @offset `;
 
@@ -107,11 +111,11 @@ export async function GET(request) {
     const [rows] = await bigquery.query({
       query: sql,
       params,
-    });
+    })
     return NextResponse.json({ reviews: rows })
   } catch (err) {
     // log error 詳細
-    console.error('[BQ ERROR]', err.message, { customer_id, start, end, account_name, location_name, offset, limit });
+    console.error('[BQ ERROR]', err.message, { customer_id, start, end, account_name, location_name, reply_filter, offset, limit });
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

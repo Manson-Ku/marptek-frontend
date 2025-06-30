@@ -4,6 +4,8 @@ import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import { useCustomer } from "@/context/CustomerContext";
 import "./reviews.css";
 
+const DEFAULT_LIMIT = 50;
+
 // 星等字串轉數字
 function getStarNum(starRating) {
   switch (starRating) {
@@ -69,8 +71,6 @@ function getYesterdayRange() {
   return [y, y];
 }
 
-const DEFAULT_LIMIT = 50;
-
 export default function Page() {
   const { customerId, loading: customerLoading } = useCustomer();
   const [reviews, setReviews] = useState([]);
@@ -92,25 +92,21 @@ export default function Page() {
   const [endDate, setEndDate] = useState(getYesterdayStr());
   const maxDate = getYesterdayStr();
 
-  // 額外篩選: "all", "replied", "unreplied"
+  // 篩選
   const [replyFilter, setReplyFilter] = useState("all");
 
-  // 摘要計數
-  const [summary, setSummary] = useState({
-    total: 0,
-    replied: 0,
-    unreplied: 0,
-  });
+  // 統計
+  const [summary, setSummary] = useState({ total: 0, replied: 0, unreplied: 0 });
 
-  // 分頁狀態
+  // 分頁
   const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true); // 是否還有更多可載入
-  const [pageLoading, setPageLoading] = useState(false); // 載入更多時 loading
+  const [hasMore, setHasMore] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
 
-  // 快速判斷過濾條件是否改變（避免 offset 失效）
+  // 條件 key
   const lastQueryKey = useRef("");
 
-  // 載入下拉選單 options
+  // 取得下拉
   useEffect(() => {
     if (!customerId) return;
     fetch(`/api/auth/reviews?all_names=1&customer_id=${customerId}`)
@@ -122,16 +118,13 @@ export default function Page() {
       });
   }, [customerId]);
 
-  // 條件 key，過濾分頁失效問題（account/location/date/replyFilter 變動時會 reset）
+  // 條件有變，重置分頁
   function getQueryKey() {
     return [
       customerId, startDate, endDate, accountName, locationName, replyFilter
     ].join("|");
   }
-
-  // 查詢評論 (分頁)
   useEffect(() => {
-    // 條件有變時要 reset offset/reviews
     const thisKey = getQueryKey();
     if (lastQueryKey.current !== thisKey) {
       lastQueryKey.current = thisKey;
@@ -141,7 +134,7 @@ export default function Page() {
     }
   }, [customerId, startDate, endDate, accountName, locationName, replyFilter]);
 
-  // 自動首次載入/每次 offset 變更時拉資料
+  // 查詢 reviews（offset 變化時自動拉）
   useEffect(() => {
     if (!customerId || !startDate || !endDate || !hasMore) return;
     setLoading(offset === 0);
@@ -149,6 +142,7 @@ export default function Page() {
     let url = `/api/auth/reviews?customer_id=${customerId}&start=${startDate}&end=${endDate}&limit=${DEFAULT_LIMIT}&offset=${offset}`;
     if (accountName) url += `&account_name=${encodeURIComponent(accountName)}`;
     if (locationName) url += `&location_name=${encodeURIComponent(locationName)}`;
+    if (replyFilter && replyFilter !== "all") url += `&reply_filter=${replyFilter}`;
 
     fetch(url)
       .then(res => res.json())
@@ -168,9 +162,9 @@ export default function Page() {
         if (offset === 0) setReviews([]);
       });
     // eslint-disable-next-line
-  }, [customerId, startDate, endDate, accountName, locationName, offset]);
+  }, [customerId, startDate, endDate, accountName, locationName, replyFilter, offset]);
 
-  // 查詢 summary (全區間評論數量)
+  // summary API 不用帶 replyFilter
   useEffect(() => {
     if (!customerId || !startDate || !endDate) return;
     let url = `/api/auth/reviews/summary?customer_id=${customerId}&start=${startDate}&end=${endDate}`;
@@ -182,7 +176,7 @@ export default function Page() {
       .catch(() => setSummary({ total: 0, replied: 0, unreplied: 0 }));
   }, [customerId, startDate, endDate, accountName, locationName]);
 
-  // 動態地點 options
+  // 地點 options
   let filteredLocationOptions = accountName
     ? (accountLocationsMap[accountName] || [])
     : allLocationNames;
@@ -191,7 +185,7 @@ export default function Page() {
     filteredLocationOptions = filteredLocationOptions.filter(opt => opt.includes(search));
   }
 
-  // 取得該地點所有群組
+  // 所有群組
   function getAllGroupsOfLocation(locationName) {
     if (!locationName) return [];
     return Object.entries(accountLocationsMap)
@@ -199,32 +193,26 @@ export default function Page() {
       .map(([account]) => account);
   }
 
-  // 回覆篩選（僅針對載入的 reviews 做）
-  let filteredReviews = reviews;
-  if (replyFilter === "replied") {
-    filteredReviews = reviews.filter(r => !!r.replyComment && r.replyComment.trim());
-  } else if (replyFilter === "unreplied") {
-    filteredReviews = reviews.filter(r => !r.replyComment || !r.replyComment.trim());
+  // 點擊切換篩選，重設 offset
+  function handleSetReplyFilter(val) {
+    setReplyFilter(val);
+    setOffset(0);
   }
 
-  // 點擊切換時，也要自動選擇第一筆
+  // 清單區直接用 reviews
   useEffect(() => {
-    if (filteredReviews.length === 0) {
-      setSelectedReview(null);
-    } else if (!filteredReviews.some(r => r.reviewId === selectedReview?.reviewId)) {
-      setSelectedReview(filteredReviews[0]);
-    }
+    if (reviews.length === 0) setSelectedReview(null);
+    else if (!reviews.some(r => r.reviewId === selectedReview?.reviewId)) setSelectedReview(reviews[0]);
     // eslint-disable-next-line
-  }, [replyFilter, reviews]);
+  }, [reviews]);
 
   return (
     <AuthenticatedLayout noContainer>
       <div className="reviews-container">
-        {/* 左側側欄 */}
+        {/* 側欄 */}
         <aside className="reviews-sidebar">
           <div className="reviews-sidebar-header">Reviews</div>
           <div className="reviews-sidebar-content">
-
             {/* 地區群組 */}
             <div style={{ marginBottom: 10 }}>
               <label style={{ fontSize: 13, color: "#555", marginBottom: 2 }}>地區群組</label>
@@ -232,8 +220,7 @@ export default function Page() {
                 value={accountName}
                 onChange={e => {
                   setAccountName(e.target.value);
-                  setLocationName(""); // 選群組時重設地點
-                  setLocationSearch(""); // 清空地點搜尋
+                  setLocationName(""); setLocationSearch("");
                 }}
                 style={{ width: "100%", fontSize: 13, border: "1px solid #d6d6d6", borderRadius: 4, padding: 3 }}
               >
@@ -243,7 +230,6 @@ export default function Page() {
                 )}
               </select>
             </div>
-
             {/* 地點名稱＋搜尋 */}
             <div style={{ marginBottom: 10 }}>
               <label style={{ fontSize: 13, color: "#555", marginBottom: 2 }}>地點名稱</label>
@@ -253,12 +239,8 @@ export default function Page() {
                 value={locationSearch}
                 onChange={e => setLocationSearch(e.target.value)}
                 style={{
-                  width: "100%",
-                  fontSize: 12,
-                  border: "1px solid #d6d6d6",
-                  borderRadius: 4,
-                  padding: 3,
-                  marginBottom: 4
+                  width: "100%", fontSize: 12, border: "1px solid #d6d6d6",
+                  borderRadius: 4, padding: 3, marginBottom: 4
                 }}
               />
               <select
@@ -272,71 +254,39 @@ export default function Page() {
                 )}
               </select>
             </div>
-            {/* 日期快速選擇按鈕 */}
+            {/* 日期快速選擇 */}
             <div style={{ marginBottom: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <button
-                type="button"
-                style={{ fontSize: 12, padding: "2px 7px", borderRadius: 4, border: "1px solid #ddd", background: "#f8f8fa", cursor: "pointer" }}
-                onClick={() => { const [s, e] = getThisYearRange(); setStartDate(s); setEndDate(e); }}
-              >今年</button>
-              <button
-                type="button"
-                style={{ fontSize: 12, padding: "2px 7px", borderRadius: 4, border: "1px solid #ddd", background: "#f8f8fa", cursor: "pointer" }}
-                onClick={() => { const [s, e] = getThisMonthRange(); setStartDate(s); setEndDate(e); }}
-              >本月</button>
-              <button
-                type="button"
-                style={{ fontSize: 12, padding: "2px 7px", borderRadius: 4, border: "1px solid #ddd", background: "#f8f8fa", cursor: "pointer" }}
-                onClick={() => { const [s, e] = getThisWeekRange(); setStartDate(s); setEndDate(e); }}
-              >本週</button>
-              <button
-                type="button"
-                style={{ fontSize: 12, padding: "2px 7px", borderRadius: 4, border: "1px solid #ddd", background: "#f8f8fa", cursor: "pointer" }}
-                onClick={() => { const [s, e] = getYesterdayRange(); setStartDate(s); setEndDate(e); }}
-              >昨天</button>
+              <button type="button" style={{ fontSize: 12, padding: "2px 7px", borderRadius: 4, border: "1px solid #ddd", background: "#f8f8fa", cursor: "pointer" }}
+                onClick={() => { const [s, e] = getThisYearRange(); setStartDate(s); setEndDate(e); }}>今年</button>
+              <button type="button" style={{ fontSize: 12, padding: "2px 7px", borderRadius: 4, border: "1px solid #ddd", background: "#f8f8fa", cursor: "pointer" }}
+                onClick={() => { const [s, e] = getThisMonthRange(); setStartDate(s); setEndDate(e); }}>本月</button>
+              <button type="button" style={{ fontSize: 12, padding: "2px 7px", borderRadius: 4, border: "1px solid #ddd", background: "#f8f8fa", cursor: "pointer" }}
+                onClick={() => { const [s, e] = getThisWeekRange(); setStartDate(s); setEndDate(e); }}>本週</button>
+              <button type="button" style={{ fontSize: 12, padding: "2px 7px", borderRadius: 4, border: "1px solid #ddd", background: "#f8f8fa", cursor: "pointer" }}
+                onClick={() => { const [s, e] = getYesterdayRange(); setStartDate(s); setEndDate(e); }}>昨天</button>
             </div>
             {/* 日期區間 */}
             <div className="reviews-date-range" style={{ flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
               <label style={{ fontSize: 13, color: "#555", marginBottom: 3 }}>評論查詢區間：</label>
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <input
-                  type="date"
-                  value={startDate}
-                  max={endDate}
-                  onChange={e => setStartDate(e.target.value)}
-                  style={{ fontSize: 13, border: "1px solid #d6d6d6", borderRadius: 4, padding: 3, width: 110 }}
-                />
+                <input type="date" value={startDate} max={endDate} onChange={e => setStartDate(e.target.value)}
+                  style={{ fontSize: 13, border: "1px solid #d6d6d6", borderRadius: 4, padding: 3, width: 110 }} />
                 <span style={{ margin: "0 2px" }}>~</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  min={startDate}
-                  max={maxDate}
-                  onChange={e => setEndDate(e.target.value)}
-                  style={{ fontSize: 13, border: "1px solid #d6d6d6", borderRadius: 4, padding: 3, width: 110 }}
-                />
+                <input type="date" value={endDate} min={startDate} max={maxDate} onChange={e => setEndDate(e.target.value)}
+                  style={{ fontSize: 13, border: "1px solid #d6d6d6", borderRadius: 4, padding: 3, width: 110 }} />
               </div>
-              <div style={{ fontSize: 12, color: "#b2b2b2", marginTop: 3 }}>
-                （結束日「不含當天」，最大只能到昨天）
-              </div>
+              <div style={{ fontSize: 12, color: "#b2b2b2", marginTop: 3 }}>（結束日「不含當天」，最大只能到昨天）</div>
             </div>
-
-            {/* 回覆狀態統計區（點選即可篩選） */}
+            {/* 回覆狀態統計區 */}
             <ul className="reviews-folder-list">
-              <li
-                className={replyFilter === "all" ? "active" : ""}
-                style={{ cursor: "pointer" }}
-                onClick={() => setReplyFilter("all")}
+              <li className={replyFilter === "all" ? "active" : ""} style={{ cursor: "pointer" }}
+                onClick={() => handleSetReplyFilter("all")}
               >評論數量 <span>{summary.total}</span></li>
-              <li
-                className={replyFilter === "replied" ? "active" : ""}
-                style={{ cursor: "pointer" }}
-                onClick={() => setReplyFilter("replied")}
+              <li className={replyFilter === "replied" ? "active" : ""} style={{ cursor: "pointer" }}
+                onClick={() => handleSetReplyFilter("replied")}
               >已回覆 <span>{summary.replied}</span></li>
-              <li
-                className={replyFilter === "unreplied" ? "active" : ""}
-                style={{ cursor: "pointer" }}
-                onClick={() => setReplyFilter("unreplied")}
+              <li className={replyFilter === "unreplied" ? "active" : ""} style={{ cursor: "pointer" }}
+                onClick={() => handleSetReplyFilter("unreplied")}
               >尚未回覆 <span>{summary.unreplied}</span></li>
             </ul>
           </div>
@@ -344,7 +294,6 @@ export default function Page() {
             <button className="reviews-add-template">+ 新增回覆範本</button>
           </div>
         </aside>
-
         {/* 中間評論清單 */}
         <main className="reviews-list">
           <div className="reviews-list-header">
@@ -358,11 +307,11 @@ export default function Page() {
           <div className="reviews-list-content">
             {customerLoading || loading ? (
               <div style={{ padding: 40, color: "#888", textAlign: "center" }}>載入中…</div>
-            ) : filteredReviews.length === 0 ? (
+            ) : reviews.length === 0 ? (
               <div style={{ padding: 40, color: "#aaa", textAlign: "center" }}>目前查無評論</div>
             ) : (
               <>
-                {filteredReviews.map((r, i) => (
+                {reviews.map((r, i) => (
                   <div
                     key={r.reviewId || i}
                     className={`reviews-list-item${selectedReview?.reviewId === r.reviewId ? ' active' : ''}`}
@@ -407,7 +356,6 @@ export default function Page() {
             )}
           </div>
         </main>
-
         {/* 右側詳情 */}
         <section className="reviews-detail">
           {selectedReview ? (
