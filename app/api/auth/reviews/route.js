@@ -40,8 +40,8 @@ export async function GET(request) {
   const sql = `
     SELECT
       reviewId,
-      displayName,
-      profilePhotoUrl,
+      reviewer.displayName AS displayName,
+      reviewer.profilePhotoUrl AS profilePhotoUrl,
       starRating,
       comment,
       createTime_ts,
