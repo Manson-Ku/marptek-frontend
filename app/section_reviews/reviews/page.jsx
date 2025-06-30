@@ -140,6 +140,10 @@ export default function Page() {
       .map(([account]) => account);
   }
 
+  // 回覆狀態統計
+  const repliedCount = reviews.filter(r => !!r.replyComment && r.replyComment.trim()).length;
+  const unrepliedCount = reviews.length - repliedCount;
+
   return (
     <AuthenticatedLayout noContainer>
       <div className="reviews-container">
@@ -245,10 +249,11 @@ export default function Page() {
               </div>
             </div>
 
+            {/* 回覆狀態統計區 */}
             <ul className="reviews-folder-list">
-              <li className="active">All Reviews <span>{reviews.length}</span></li>
-              <li>Open <span>--</span></li>
-              <li>Replied <span>--</span></li>
+              <li>評論數量 <span>{reviews.length}</span></li>
+              <li>已回覆 <span>{repliedCount}</span></li>
+              <li>尚未回覆 <span>{unrepliedCount}</span></li>
             </ul>
           </div>
           <div className="reviews-sidebar-footer">
