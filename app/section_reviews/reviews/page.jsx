@@ -37,6 +37,40 @@ function formatDate(ts) {
   if (typeof ts === "string") return ts.split("T")[0];
   return "--";
 }
+function getThisYearRange() {
+  const now = new Date();
+  const start = `${now.getFullYear()}-01-01`;
+  const end = getYesterdayStr();
+  return [start, end];
+}
+function getThisMonthRange() {
+  const now = new Date();
+  const start = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const end = getYesterdayStr();
+  return [start, end];
+}
+function getThisWeekRange() {
+  const now = new Date();
+  // 找本週一
+  const day = now.getDay() || 7; // 星期天 day=0 → 7
+  let monday = new Date(now);
+  monday.setDate(now.getDate() - day + 1);
+  let start = monday.toISOString().slice(0, 10);
+  let end = getYesterdayStr();
+  // 如果今天是週一，顯示上週一~上週日
+  if (day === 1) {
+    monday.setDate(monday.getDate() - 7);
+    start = monday.toISOString().slice(0, 10);
+    let sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    end = sunday.toISOString().slice(0, 10);
+  }
+  return [start, end];
+}
+function getYesterdayRange() {
+  const y = getYesterdayStr();
+  return [y, y];
+}
 
 export default function Page() {
   const { customerId, loading: customerLoading } = useCustomer();
@@ -162,7 +196,29 @@ export default function Page() {
                 )}
               </select>
             </div>
-
+            {/* 日期快速選擇按鈕 */}
+            <div style={{ marginBottom: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                style={{ fontSize: 12, padding: "2px 7px", borderRadius: 4, border: "1px solid #ddd", background: "#f8f8fa", cursor: "pointer" }}
+                onClick={() => { const [s, e] = getThisYearRange(); setStartDate(s); setEndDate(e); }}
+              >今年</button>
+              <button
+                type="button"
+                style={{ fontSize: 12, padding: "2px 7px", borderRadius: 4, border: "1px solid #ddd", background: "#f8f8fa", cursor: "pointer" }}
+                onClick={() => { const [s, e] = getThisMonthRange(); setStartDate(s); setEndDate(e); }}
+              >本月</button>
+              <button
+                type="button"
+                style={{ fontSize: 12, padding: "2px 7px", borderRadius: 4, border: "1px solid #ddd", background: "#f8f8fa", cursor: "pointer" }}
+                onClick={() => { const [s, e] = getThisWeekRange(); setStartDate(s); setEndDate(e); }}
+              >本週</button>
+              <button
+                type="button"
+                style={{ fontSize: 12, padding: "2px 7px", borderRadius: 4, border: "1px solid #ddd", background: "#f8f8fa", cursor: "pointer" }}
+                onClick={() => { const [s, e] = getYesterdayRange(); setStartDate(s); setEndDate(e); }}
+              >昨天</button>
+            </div>
             {/* 日期區間 */}
             <div className="reviews-date-range" style={{ flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
               <label style={{ fontSize: 13, color: "#555", marginBottom: 3 }}>評論查詢區間：</label>
