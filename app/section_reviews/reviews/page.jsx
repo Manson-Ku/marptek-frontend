@@ -96,6 +96,13 @@ export default function Page() {
   // 額外篩選: "all", "replied", "unreplied"
   const [replyFilter, setReplyFilter] = useState("all");
 
+  // 摘要計數
+  const [summary, setSummary] = useState({
+    total: 0,
+    replied: 0,
+    unreplied: 0,
+  });
+
   // 載入下拉選單 options
   useEffect(() => {
     if (!customerId) return;
@@ -108,14 +115,13 @@ export default function Page() {
       });
   }, [customerId]);
 
-  // 查詢評論
+  // 查詢評論 (分頁)
   useEffect(() => {
     if (!customerId || !startDate || !endDate) return;
     setLoading(true);
     let url = `/api/auth/reviews?customer_id=${customerId}&start=${startDate}&end=${endDate}`;
     if (accountName) url += `&account_name=${encodeURIComponent(accountName)}`;
     if (locationName) url += `&location_name=${encodeURIComponent(locationName)}`;
-
     fetch(url)
       .then(res => res.json())
       .then(data => {
@@ -124,6 +130,18 @@ export default function Page() {
         setSelectedReview((data.reviews && data.reviews[0]) || null);
       })
       .catch(() => setLoading(false));
+  }, [customerId, startDate, endDate, accountName, locationName]);
+
+  // 查詢 summary (全區間評論數量，搭配你的 summary API)
+  useEffect(() => {
+    if (!customerId || !startDate || !endDate) return;
+    let url = `/api/auth/reviews/summary?customer_id=${customerId}&start=${startDate}&end=${endDate}`;
+    if (accountName) url += `&account_name=${encodeURIComponent(accountName)}`;
+    if (locationName) url += `&location_name=${encodeURIComponent(locationName)}`;
+    fetch(url)
+      .then(res => res.json())
+      .then(data => setSummary(data || { total: 0, replied: 0, unreplied: 0 }))
+      .catch(() => setSummary({ total: 0, replied: 0, unreplied: 0 }));
   }, [customerId, startDate, endDate, accountName, locationName]);
 
   // 動態地點 options，先依群組過濾，再依輸入搜尋
@@ -142,10 +160,6 @@ export default function Page() {
       .filter(([account, locs]) => locs.includes(locationName))
       .map(([account]) => account);
   }
-
-  // 回覆狀態統計
-  const repliedCount = reviews.filter(r => !!r.replyComment && r.replyComment.trim()).length;
-  const unrepliedCount = reviews.length - repliedCount;
 
   // 根據 replyFilter 處理清單
   let filteredReviews = reviews;
@@ -270,23 +284,23 @@ export default function Page() {
               </div>
             </div>
 
-            {/* 回覆狀態統計區 */}
+            {/* 回覆狀態統計區（點選即可篩選） */}
             <ul className="reviews-folder-list">
               <li
                 className={replyFilter === "all" ? "active" : ""}
                 style={{ cursor: "pointer" }}
                 onClick={() => setReplyFilter("all")}
-              >評論數量 <span>{reviews.length}</span></li>
+              >評論數量 <span>{summary.total}</span></li>
               <li
                 className={replyFilter === "replied" ? "active" : ""}
                 style={{ cursor: "pointer" }}
                 onClick={() => setReplyFilter("replied")}
-              >已回覆 <span>{repliedCount}</span></li>
+              >已回覆 <span>{summary.replied}</span></li>
               <li
                 className={replyFilter === "unreplied" ? "active" : ""}
                 style={{ cursor: "pointer" }}
                 onClick={() => setReplyFilter("unreplied")}
-              >尚未回覆 <span>{unrepliedCount}</span></li>
+              >尚未回覆 <span>{summary.unreplied}</span></li>
             </ul>
           </div>
           <div className="reviews-sidebar-footer">
@@ -347,7 +361,7 @@ export default function Page() {
         <section className="reviews-detail">
           {selectedReview ? (
             <>
-              {/* === 新增：所有群組與地點顯示 === */}
+              {/* 所有群組與地點顯示 */}
               <div style={{
                 margin: "6px 0 8px 0",
                 fontSize: "0.98rem",
@@ -375,7 +389,7 @@ export default function Page() {
                   ))}
                 </div>
               </div>
-              {/* === 其餘詳情不變 === */}
+              {/* 詳情區 */}
               <div className="reviews-detail-header">
                 <div className="reviews-detail-title">
                   {selectedReview.displayName || "匿名"}

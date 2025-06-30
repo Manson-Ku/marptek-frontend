@@ -24,6 +24,10 @@ export async function GET(request) {
   const location_name = searchParams.get('location_name')
   const all_names = searchParams.get('all_names')
 
+  // 分頁參數，預設值
+  const offset = Number(searchParams.get('offset') || 0)
+  const limit = Math.min(Number(searchParams.get('limit') || 50), 200) // 上限200，避免被刷
+
   // ======= 必要參數檢查 =======
   if (!customer_id) {
     return NextResponse.json({ error: '缺少 customer_id' }, { status: 400 })
@@ -64,7 +68,7 @@ export async function GET(request) {
     }
   }
 
-  // ======= 查詢評論主查詢 =======
+  // ======= 查詢評論主查詢 (支援分頁) =======
   let sql = `
     SELECT
       reviewId,
@@ -87,7 +91,7 @@ export async function GET(request) {
       AND (deleted IS NULL OR deleted = FALSE)
   `
   // 可選篩選條件
-  const params = { customer_id, start, end };
+  const params = { customer_id, start, end, limit, offset };
 
   if (account_name) {
     sql += ` AND account_name = @account_name `
@@ -97,7 +101,7 @@ export async function GET(request) {
     sql += ` AND location_name = @location_name `
     params.location_name = location_name;
   }
-  sql += ` ORDER BY createTime_ts DESC LIMIT 50 `;
+  sql += ` ORDER BY createTime_ts DESC LIMIT @limit OFFSET @offset `;
 
   try {
     const [rows] = await bigquery.query({
@@ -107,7 +111,7 @@ export async function GET(request) {
     return NextResponse.json({ reviews: rows })
   } catch (err) {
     // log error 詳細
-    console.error('[BQ ERROR]', err.message, { customer_id, start, end, account_name, location_name });
+    console.error('[BQ ERROR]', err.message, { customer_id, start, end, account_name, location_name, offset, limit });
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
