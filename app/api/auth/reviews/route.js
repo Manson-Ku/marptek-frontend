@@ -45,8 +45,8 @@ export async function GET(request) {
       starRating,
       comment,
       createTime_ts,
-      reviewReplyComment AS replyComment,
-      reviewReplyUpdateTime AS replyUpdateTime,
+      reviewReply.Comment AS replyComment,
+      reviewReply.UpdateTime AS replyUpdateTime,
       locationId,
       accountId,
       deleted
