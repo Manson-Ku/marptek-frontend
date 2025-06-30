@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import { useCustomer } from "@/context/CustomerContext";
 import "./locationHealthCheck.css";
 
+// 日期格式化工具
 function formatDate(ts) {
   if (!ts) return "--";
   if (typeof ts === "string") return ts.split("T")[0];
@@ -12,20 +13,39 @@ function formatDate(ts) {
   return "--";
 }
 
+// 地址驗證
+function isAddressValid(addr) {
+  if (!addr) return false;
+  return !!(
+    addr.administrativeArea &&
+    addr.locality &&
+    Array.isArray(addr.addressLines) &&
+    addr.addressLines[0]
+  );
+}
+
+// NAP分數
 function calcNAPScore(loc) {
   let score = 0;
   if (loc.title) score++;
-  if (loc.storefrontAddress?.addressLines?.length) score++;
+  if (isAddressValid(loc.storefrontAddress)) score++;
   if (loc.phoneNumbers?.primaryPhone) score++;
   return Math.round((score / 3) * 100);
 }
 
+// NAP缺漏
 function formatNAPHint(loc) {
   const lacks = [];
   if (!loc.title) lacks.push("名稱");
-  if (!loc.storefrontAddress?.addressLines?.length) lacks.push("地址");
+  if (!isAddressValid(loc.storefrontAddress)) lacks.push("地址");
   if (!loc.phoneNumbers?.primaryPhone) lacks.push("電話");
   return lacks.length === 0 ? "✅ 完整" : "缺少：" + lacks.join("、");
+}
+
+// 地址組字串
+function renderAddress(addr) {
+  if (!isAddressValid(addr)) return <span className="lhc-warn">（缺完整地址）</span>;
+  return `${addr.administrativeArea || ""}${addr.locality || ""}${addr.addressLines[0] || ""}`;
 }
 
 export default function LocationHealthCheckPage() {
@@ -38,9 +58,11 @@ export default function LocationHealthCheckPage() {
   const [allAccountIds, setAllAccountIds] = useState([]);
   const [locationSearch, setLocationSearch] = useState("");
   const [filteredLocs, setFilteredLocs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!customerId) return;
+    setLoading(true);
     fetch(`/api/auth/locations?customer_id=${customerId}`)
       .then(res => res.json())
       .then(data => {
@@ -48,6 +70,7 @@ export default function LocationHealthCheckPage() {
         setLocations(locs);
         setAllAccountIds([...new Set(locs.map(l => l.accountID))]);
         setFilteredLocs(locs);
+        setLoading(false);
       });
   }, [customerId]);
 
@@ -88,7 +111,6 @@ export default function LocationHealthCheckPage() {
             </div>
             {/* 健檢統計 */}
             <div className="lhc-stats" style={{ marginTop: 18 }}>
-              {/** 可加分數分布條/數量統計 */}
               <div>總數：{filteredLocs.length}</div>
               <div>
                 完整NAP：{filteredLocs.filter(l => calcNAPScore(l) === 100).length}
@@ -102,7 +124,7 @@ export default function LocationHealthCheckPage() {
         <main className="lhc-list">
           <div className="lhc-list-header">地點清單</div>
           <div className="lhc-list-content">
-            {customerLoading ? (
+            {customerLoading || loading ? (
               <div style={{ padding: 40, color: "#888", textAlign: "center" }}>載入中…</div>
             ) : filteredLocs.length === 0 ? (
               <div style={{ padding: 40, color: "#aaa", textAlign: "center" }}>目前查無地點</div>
@@ -118,7 +140,7 @@ export default function LocationHealthCheckPage() {
                     <NAPBar score={calcNAPScore(loc)} />
                   </div>
                   <div className="lhc-item-detail">
-                    {loc.storefrontAddress?.addressLines?.join(" ") || <span className="lhc-warn">（缺地址）</span>}
+                    {renderAddress(loc.storefrontAddress)}
                   </div>
                   <div className="lhc-item-detail">
                     {loc.phoneNumbers?.primaryPhone || <span className="lhc-warn">（缺電話）</span>}
@@ -152,7 +174,7 @@ export default function LocationHealthCheckPage() {
                 {formatNAPHint(selectedLoc)}
               </div>
               <div style={{ marginTop: 14 }}>
-                <div>地址：{selectedLoc.storefrontAddress?.addressLines?.join(" ") || <span className="lhc-warn">（缺地址）</span>}</div>
+                <div>地址：{renderAddress(selectedLoc.storefrontAddress)}</div>
                 <div>電話：{selectedLoc.phoneNumbers?.primaryPhone || <span className="lhc-warn">（缺電話）</span>}</div>
                 <div>主類別：{selectedLoc.categories?.primaryCategory?.displayName || <span className="lhc-warn">（缺主類別）</span>}</div>
                 <div>營運狀態：{selectedLoc.is_active ? '啟用' : '停用'} / {selectedLoc.openInfo?.status || "未知"}</div>
