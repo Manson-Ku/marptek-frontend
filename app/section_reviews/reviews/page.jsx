@@ -15,26 +15,11 @@ function getStarNum(starRating) {
     default: return 0;
   }
 }
-
-// 日期字串工具
-function getTodayStr() {
-  return new Date().toISOString().slice(0, 10);
-}
-function getYesterdayStr() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
-}
-function getNDaysAgoStr(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
-}
-
-// 處理 BigQuery timestamp/date 兼容所有情境
+function getTodayStr() { return new Date().toISOString().slice(0, 10); }
+function getYesterdayStr() { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().slice(0, 10); }
+function getNDaysAgoStr(n) { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); }
 function formatDate(ts) {
   if (!ts) return "--";
-  // 1. BigQuery timestamp 可能回傳 string、Date、或 { value: string }
   if (typeof ts === "object") {
     if (ts.value) ts = ts.value;
     else if (ts instanceof Date) ts = ts.toISOString();
@@ -50,15 +35,38 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [selectedReview, setSelectedReview] = useState(null);
 
-  // 日期區間 state
+  // 查詢條件
   const [startDate, setStartDate] = useState(getNDaysAgoStr(30));
   const [endDate, setEndDate] = useState(getYesterdayStr());
   const maxDate = getYesterdayStr();
+  const [accountName, setAccountName] = useState(""); // 新增地區群組
+  const [locationName, setLocationName] = useState(""); // 新增地點名稱
 
+  // 可選擇的群組/地點
+  const [accountNames, setAccountNames] = useState([]);
+  const [locationNames, setLocationNames] = useState([]);
+
+  // 只查一次所有 account/location name
+  useEffect(() => {
+    if (!customerId) return;
+    fetch(`/api/auth/reviews?customer_id=${customerId}&start=${startDate}&end=${endDate}&all_names=1`)
+      .then(res => res.json())
+      .then(data => {
+        // 這邊 reviews 只用來取可選群組/地點清單，不顯示清單內容
+        setAccountNames([...new Set((data.all_account_names || []).filter(Boolean))]);
+        setLocationNames([...new Set((data.all_location_names || []).filter(Boolean))]);
+      });
+    // eslint-disable-next-line
+  }, [customerId]); // 只要 customerId 變就重查，減少 reload
+
+  // 查詢評論
   useEffect(() => {
     if (!customerId || !startDate || !endDate) return;
     setLoading(true);
-    fetch(`/api/auth/reviews?customer_id=${customerId}&start=${startDate}&end=${endDate}`)
+    let url = `/api/auth/reviews?customer_id=${customerId}&start=${startDate}&end=${endDate}`;
+    if (accountName) url += `&account_name=${encodeURIComponent(accountName)}`;
+    if (locationName) url += `&location_name=${encodeURIComponent(locationName)}`;
+    fetch(url)
       .then(res => res.json())
       .then(data => {
         setReviews(data.reviews || []);
@@ -66,7 +74,7 @@ export default function Page() {
         setSelectedReview((data.reviews && data.reviews[0]) || null);
       })
       .catch(() => setLoading(false));
-  }, [customerId, startDate, endDate]);
+  }, [customerId, startDate, endDate, accountName, locationName]);
 
   return (
     <AuthenticatedLayout noContainer>
@@ -75,6 +83,33 @@ export default function Page() {
         <aside className="reviews-sidebar">
           <div className="reviews-sidebar-header">Reviews</div>
           <div className="reviews-sidebar-content">
+            {/* 新增兩個下拉篩選 */}
+            <div style={{ width: "100%", marginBottom: 12 }}>
+              <label style={{ fontSize: 13, color: "#555", marginBottom: 2, display: "block" }}>地區群組</label>
+              <select
+                value={accountName}
+                onChange={e => { setAccountName(e.target.value); setLocationName(""); }}
+                style={{ width: "100%", fontSize: 13, padding: 4, borderRadius: 4, marginBottom: 6 }}
+              >
+                <option value="">全部群組</option>
+                {accountNames.map(name =>
+                  <option key={name} value={name}>{name}</option>
+                )}
+              </select>
+              <label style={{ fontSize: 13, color: "#555", marginBottom: 2, display: "block" }}>地點名稱</label>
+              <select
+                value={locationName}
+                onChange={e => setLocationName(e.target.value)}
+                style={{ width: "100%", fontSize: 13, padding: 4, borderRadius: 4 }}
+                disabled={!accountName && locationNames.length === 0} // 無 account_name 不可選
+              >
+                <option value="">全部地點</option>
+                {/* 若有選 accountName，僅顯示該群組下的地點 */}
+                {locationNames.filter(l => !accountName || reviews.some(r => r.account_name === accountName && r.location_name === l)).map(l =>
+                  <option key={l} value={l}>{l}</option>
+                )}
+              </select>
+            </div>
             <div className="reviews-date-range" style={{ flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
               <label style={{ fontSize: 13, color: "#555", marginBottom: 3 }}>評論查詢區間：</label>
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -149,6 +184,9 @@ export default function Page() {
                     <div className="reviews-snippet">
                       {r.comment?.slice(0, 40) || "（無內容）"}
                     </div>
+                    <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+                      {r.account_name && `[${r.account_name}]`} {r.location_name}
+                    </div>
                   </div>
                   <div className="reviews-date">
                     {formatDate(r.createTime_ts)}
@@ -173,6 +211,9 @@ export default function Page() {
                     {formatDate(selectedReview.createTime_ts)}
                   </span>
                 </div>
+                <div style={{ margin: "6px 0", color: "#888", fontSize: 14 }}>
+                  {selectedReview.account_name && `[${selectedReview.account_name}]`} {selectedReview.location_name}
+                </div>
                 <div className="reviews-detail-text" style={{ margin: "12px 0 0 0" }}>
                   {selectedReview.comment || <span style={{ color: "#bbb" }}>（無評論內容）</span>}
                 </div>
@@ -194,7 +235,6 @@ export default function Page() {
                     上次回覆：{selectedReview.replyComment}
                     {selectedReview.replyUpdateTime &&
                       <span style={{ marginLeft: 10, color: "#b7b7b7" }}>
-                        {/* 如果 replyUpdateTime 也是 timestamp，可再用 formatDate 處理 */}
                         {formatDate(selectedReview.replyUpdateTime)}
                       </span>}
                   </div>
