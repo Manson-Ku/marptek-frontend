@@ -1,0 +1,54 @@
+.lhc-root {
+  padding: 24px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.lhc-title {
+  margin-bottom: 24px;
+  font-size: 2rem;
+}
+
+.lhc-toolbar {
+  margin-bottom: 20px;
+}
+
+.lhc-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.lhc-table th, .lhc-table td {
+  border: 1px solid #eee;
+  padding: 8px 10px;
+  font-size: 15px;
+}
+
+.lhc-warn {
+  color: #e67e22;
+  font-weight: bold;
+}
+
+.lhc-nap-bar {
+  width: 70px;
+  background: #eee;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.lhc-nap-bar-inner {
+  height: 22px;
+  color: #fff;
+  text-align: center;
+  border-radius: 8px;
+  transition: width 0.3s;
+  min-width: 30px;
+}
+
+.lhc-loading {
+  margin-top: 20px;
+  font-size: 16px;
+  color: #aaa;
+}
