@@ -24,11 +24,11 @@ export async function GET(request) {
   const location_name = searchParams.get('location_name')
   const all_names = searchParams.get('all_names')
 
-  // 分頁參數，預設值
-  const offset = Number(searchParams.get('offset') || 0)
-  const limit = Math.min(Number(searchParams.get('limit') || 50), 200) // 上限200，避免被刷
+  // 解析分頁參數
+  const offset = Math.max(0, Number(searchParams.get('offset')) || 0)
+  const limit = Math.min(Math.max(Number(searchParams.get('limit')) || 50, 1), 200) // 1~200
 
-  // ======= 必要參數檢查 =======
+  // 必要參數檢查
   if (!customer_id) {
     return NextResponse.json({ error: '缺少 customer_id' }, { status: 400 })
   }
@@ -37,7 +37,7 @@ export async function GET(request) {
     return NextResponse.json({ error: '缺少日期區間 (start, end)' }, { status: 400 })
   }
 
-  // ======= names selector =======
+  // -------- names selector 模式：查詢所有群組/地點清單 --------
   if (all_names === "1") {
     try {
       const sql_names = `
@@ -68,7 +68,7 @@ export async function GET(request) {
     }
   }
 
-  // ======= 查詢評論主查詢 (支援分頁) =======
+  // -------- 主查詢（支援分頁、篩選） --------
   let sql = `
     SELECT
       reviewId,
@@ -89,16 +89,16 @@ export async function GET(request) {
       AND createTime_ts >= @start
       AND createTime_ts < @end
       AND (deleted IS NULL OR deleted = FALSE)
-  `
-  // 可選篩選條件
+  `;
+  // 篩選參數
   const params = { customer_id, start, end, limit, offset };
 
   if (account_name) {
-    sql += ` AND account_name = @account_name `
+    sql += ` AND account_name = @account_name `;
     params.account_name = account_name;
   }
   if (location_name) {
-    sql += ` AND location_name = @location_name `
+    sql += ` AND location_name = @location_name `;
     params.location_name = location_name;
   }
   sql += ` ORDER BY createTime_ts DESC LIMIT @limit OFFSET @offset `;
@@ -107,7 +107,7 @@ export async function GET(request) {
     const [rows] = await bigquery.query({
       query: sql,
       params,
-    })
+    });
     return NextResponse.json({ reviews: rows })
   } catch (err) {
     // log error 詳細

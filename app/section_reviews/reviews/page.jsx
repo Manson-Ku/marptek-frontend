@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import { useCustomer } from "@/context/CustomerContext";
 import "./reviews.css";
@@ -15,7 +15,6 @@ function getStarNum(starRating) {
     default: return 0;
   }
 }
-
 // 日期工具
 function getYesterdayStr() {
   const d = new Date();
@@ -51,13 +50,11 @@ function getThisMonthRange() {
 }
 function getThisWeekRange() {
   const now = new Date();
-  // 找本週一
-  const day = now.getDay() || 7; // 星期天 day=0 → 7
+  const day = now.getDay() || 7;
   let monday = new Date(now);
   monday.setDate(now.getDate() - day + 1);
   let start = monday.toISOString().slice(0, 10);
   let end = getYesterdayStr();
-  // 如果今天是週一，顯示上週一~上週日
   if (day === 1) {
     monday.setDate(monday.getDate() - 7);
     start = monday.toISOString().slice(0, 10);
@@ -71,6 +68,8 @@ function getYesterdayRange() {
   const y = getYesterdayStr();
   return [y, y];
 }
+
+const DEFAULT_LIMIT = 50;
 
 export default function Page() {
   const { customerId, loading: customerLoading } = useCustomer();
@@ -103,6 +102,14 @@ export default function Page() {
     unreplied: 0,
   });
 
+  // 分頁狀態
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true); // 是否還有更多可載入
+  const [pageLoading, setPageLoading] = useState(false); // 載入更多時 loading
+
+  // 快速判斷過濾條件是否改變（避免 offset 失效）
+  const lastQueryKey = useRef("");
+
   // 載入下拉選單 options
   useEffect(() => {
     if (!customerId) return;
@@ -115,24 +122,55 @@ export default function Page() {
       });
   }, [customerId]);
 
+  // 條件 key，過濾分頁失效問題（account/location/date/replyFilter 變動時會 reset）
+  function getQueryKey() {
+    return [
+      customerId, startDate, endDate, accountName, locationName, replyFilter
+    ].join("|");
+  }
+
   // 查詢評論 (分頁)
   useEffect(() => {
-    if (!customerId || !startDate || !endDate) return;
-    setLoading(true);
-    let url = `/api/auth/reviews?customer_id=${customerId}&start=${startDate}&end=${endDate}`;
+    // 條件有變時要 reset offset/reviews
+    const thisKey = getQueryKey();
+    if (lastQueryKey.current !== thisKey) {
+      lastQueryKey.current = thisKey;
+      setOffset(0);
+      setReviews([]);
+      setHasMore(true);
+    }
+  }, [customerId, startDate, endDate, accountName, locationName, replyFilter]);
+
+  // 自動首次載入/每次 offset 變更時拉資料
+  useEffect(() => {
+    if (!customerId || !startDate || !endDate || !hasMore) return;
+    setLoading(offset === 0);
+    setPageLoading(offset > 0);
+    let url = `/api/auth/reviews?customer_id=${customerId}&start=${startDate}&end=${endDate}&limit=${DEFAULT_LIMIT}&offset=${offset}`;
     if (accountName) url += `&account_name=${encodeURIComponent(accountName)}`;
     if (locationName) url += `&location_name=${encodeURIComponent(locationName)}`;
+
     fetch(url)
       .then(res => res.json())
       .then(data => {
-        setReviews(data.reviews || []);
+        const fetched = data.reviews || [];
+        setReviews(prev => offset === 0 ? fetched : [...prev, ...fetched]);
+        setHasMore(fetched.length === DEFAULT_LIMIT);
         setLoading(false);
-        setSelectedReview((data.reviews && data.reviews[0]) || null);
+        setPageLoading(false);
+        if ((offset === 0 && fetched.length > 0) || !selectedReview) {
+          setSelectedReview(fetched[0] || null);
+        }
       })
-      .catch(() => setLoading(false));
-  }, [customerId, startDate, endDate, accountName, locationName]);
+      .catch(() => {
+        setLoading(false);
+        setPageLoading(false);
+        if (offset === 0) setReviews([]);
+      });
+    // eslint-disable-next-line
+  }, [customerId, startDate, endDate, accountName, locationName, offset]);
 
-  // 查詢 summary (全區間評論數量，搭配你的 summary API)
+  // 查詢 summary (全區間評論數量)
   useEffect(() => {
     if (!customerId || !startDate || !endDate) return;
     let url = `/api/auth/reviews/summary?customer_id=${customerId}&start=${startDate}&end=${endDate}`;
@@ -144,7 +182,7 @@ export default function Page() {
       .catch(() => setSummary({ total: 0, replied: 0, unreplied: 0 }));
   }, [customerId, startDate, endDate, accountName, locationName]);
 
-  // 動態地點 options，先依群組過濾，再依輸入搜尋
+  // 動態地點 options
   let filteredLocationOptions = accountName
     ? (accountLocationsMap[accountName] || [])
     : allLocationNames;
@@ -153,7 +191,7 @@ export default function Page() {
     filteredLocationOptions = filteredLocationOptions.filter(opt => opt.includes(search));
   }
 
-  // 取得該地點所有群組（右側詳情用）
+  // 取得該地點所有群組
   function getAllGroupsOfLocation(locationName) {
     if (!locationName) return [];
     return Object.entries(accountLocationsMap)
@@ -161,7 +199,7 @@ export default function Page() {
       .map(([account]) => account);
   }
 
-  // 根據 replyFilter 處理清單
+  // 回覆篩選（僅針對載入的 reviews 做）
   let filteredReviews = reviews;
   if (replyFilter === "replied") {
     filteredReviews = reviews.filter(r => !!r.replyComment && r.replyComment.trim());
@@ -209,7 +247,6 @@ export default function Page() {
             {/* 地點名稱＋搜尋 */}
             <div style={{ marginBottom: 10 }}>
               <label style={{ fontSize: 13, color: "#555", marginBottom: 2 }}>地點名稱</label>
-              {/* 搜尋框 */}
               <input
                 type="text"
                 placeholder="搜尋地點名稱"
@@ -324,35 +361,49 @@ export default function Page() {
             ) : filteredReviews.length === 0 ? (
               <div style={{ padding: 40, color: "#aaa", textAlign: "center" }}>目前查無評論</div>
             ) : (
-              filteredReviews.map((r, i) => (
-                <div
-                  key={r.reviewId || i}
-                  className={`reviews-list-item${selectedReview?.reviewId === r.reviewId ? ' active' : ''}`}
-                  onClick={() => setSelectedReview(r)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <div className="reviews-avatar"
-                    style={{
-                      backgroundImage: r.profilePhotoUrl ? `url(${r.profilePhotoUrl})` : undefined,
-                      backgroundSize: "cover"
-                    }}
-                  ></div>
-                  <div className="reviews-item-content">
-                    <div className="reviews-author">
-                      {r.displayName || "匿名"}
-                      <span style={{ marginLeft: 8, color: "#faad14" }}>
-                        {"★".repeat(getStarNum(r.starRating))}
-                      </span>
+              <>
+                {filteredReviews.map((r, i) => (
+                  <div
+                    key={r.reviewId || i}
+                    className={`reviews-list-item${selectedReview?.reviewId === r.reviewId ? ' active' : ''}`}
+                    onClick={() => setSelectedReview(r)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <div className="reviews-avatar"
+                      style={{
+                        backgroundImage: r.profilePhotoUrl ? `url(${r.profilePhotoUrl})` : undefined,
+                        backgroundSize: "cover"
+                      }}
+                    ></div>
+                    <div className="reviews-item-content">
+                      <div className="reviews-author">
+                        {r.displayName || "匿名"}
+                        <span style={{ marginLeft: 8, color: "#faad14" }}>
+                          {"★".repeat(getStarNum(r.starRating))}
+                        </span>
+                      </div>
+                      <div className="reviews-snippet">
+                        {r.comment?.slice(0, 40) || "（無內容）"}
+                      </div>
                     </div>
-                    <div className="reviews-snippet">
-                      {r.comment?.slice(0, 40) || "（無內容）"}
+                    <div className="reviews-date">
+                      {formatDate(r.createTime_ts)}
                     </div>
                   </div>
-                  <div className="reviews-date">
-                    {formatDate(r.createTime_ts)}
+                ))}
+                {hasMore && !loading && (
+                  <div style={{ padding: "16px 0", textAlign: "center" }}>
+                    <button
+                      onClick={() => setOffset(offset + DEFAULT_LIMIT)}
+                      className="reviews-btn"
+                      disabled={pageLoading}
+                      style={{ minWidth: 100 }}
+                    >
+                      {pageLoading ? "載入中…" : "載入更多"}
+                    </button>
                   </div>
-                </div>
-              ))
+                )}
+              </>
             )}
           </div>
         </main>
