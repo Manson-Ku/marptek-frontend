@@ -93,6 +93,9 @@ export default function Page() {
   const [endDate, setEndDate] = useState(getYesterdayStr());
   const maxDate = getYesterdayStr();
 
+  // 額外篩選: "all", "replied", "unreplied"
+  const [replyFilter, setReplyFilter] = useState("all");
+
   // 載入下拉選單 options
   useEffect(() => {
     if (!customerId) return;
@@ -143,6 +146,24 @@ export default function Page() {
   // 回覆狀態統計
   const repliedCount = reviews.filter(r => !!r.replyComment && r.replyComment.trim()).length;
   const unrepliedCount = reviews.length - repliedCount;
+
+  // 根據 replyFilter 處理清單
+  let filteredReviews = reviews;
+  if (replyFilter === "replied") {
+    filteredReviews = reviews.filter(r => !!r.replyComment && r.replyComment.trim());
+  } else if (replyFilter === "unreplied") {
+    filteredReviews = reviews.filter(r => !r.replyComment || !r.replyComment.trim());
+  }
+
+  // 點擊切換時，也要自動選擇第一筆
+  useEffect(() => {
+    if (filteredReviews.length === 0) {
+      setSelectedReview(null);
+    } else if (!filteredReviews.some(r => r.reviewId === selectedReview?.reviewId)) {
+      setSelectedReview(filteredReviews[0]);
+    }
+    // eslint-disable-next-line
+  }, [replyFilter, reviews]);
 
   return (
     <AuthenticatedLayout noContainer>
@@ -251,9 +272,21 @@ export default function Page() {
 
             {/* 回覆狀態統計區 */}
             <ul className="reviews-folder-list">
-              <li>評論數量 <span>{reviews.length}</span></li>
-              <li>已回覆 <span>{repliedCount}</span></li>
-              <li>尚未回覆 <span>{unrepliedCount}</span></li>
+              <li
+                className={replyFilter === "all" ? "active" : ""}
+                style={{ cursor: "pointer" }}
+                onClick={() => setReplyFilter("all")}
+              >評論數量 <span>{reviews.length}</span></li>
+              <li
+                className={replyFilter === "replied" ? "active" : ""}
+                style={{ cursor: "pointer" }}
+                onClick={() => setReplyFilter("replied")}
+              >已回覆 <span>{repliedCount}</span></li>
+              <li
+                className={replyFilter === "unreplied" ? "active" : ""}
+                style={{ cursor: "pointer" }}
+                onClick={() => setReplyFilter("unreplied")}
+              >尚未回覆 <span>{unrepliedCount}</span></li>
             </ul>
           </div>
           <div className="reviews-sidebar-footer">
@@ -274,10 +307,10 @@ export default function Page() {
           <div className="reviews-list-content">
             {customerLoading || loading ? (
               <div style={{ padding: 40, color: "#888", textAlign: "center" }}>載入中…</div>
-            ) : reviews.length === 0 ? (
+            ) : filteredReviews.length === 0 ? (
               <div style={{ padding: 40, color: "#aaa", textAlign: "center" }}>目前查無評論</div>
             ) : (
-              reviews.map((r, i) => (
+              filteredReviews.map((r, i) => (
                 <div
                   key={r.reviewId || i}
                   className={`reviews-list-item${selectedReview?.reviewId === r.reviewId ? ' active' : ''}`}
