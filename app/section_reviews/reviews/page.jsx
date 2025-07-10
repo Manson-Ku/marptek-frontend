@@ -71,71 +71,66 @@ function getYesterdayRange() {
   return [y, y];
 }
 // 回覆評論用
-async function handleReplySubmit() {
-  if (!selectedReview) return;
-  const replyComment = replyInputRef.current.value?.trim();
-  if (!replyComment) {
-    alert("請輸入回覆內容");
-    return;
-  }
-  if (!customerId) {
-    alert("缺少 customerId，請重新登入");
-    return;
-  }
-
-  // 判斷是否要覆蓋
-  if (selectedReview.replyComment && selectedReview.replyComment.trim() !== "") {
-    const ok = window.confirm(
-      `此評論已經有回覆：\n\n${selectedReview.replyComment}\n\n確定要覆蓋嗎？`
-    );
-    if (!ok) return;
-  } else {
-    const ok = window.confirm(
-      `確定要送出回覆嗎？`
-    );
-    if (!ok) return;
-  }
-
-  // 組合 payload
-  const body = {
-    reviewId: selectedReview.reviewId,
-    customer_id: customerId,
-    replyComment,
-    accountId: selectedReview.accountId,
-    locationId: selectedReview.locationId,
-    reply_by: "系統管理員", // 可以用 session user name
-  };
-
-  try {
-    // 呼叫 Cloud Run API
-    const resp = await fetch("https://reply-reviews-84949832003.asia-east1.run.app", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const data = await resp.json();
-    if (data.status === 200) {
-      alert("回覆成功！");
-      // 前端立即同步顯示
-      setSelectedReview(prev => ({
-        ...prev,
-        replyComment: replyComment,
-        replyUpdateTime: new Date().toISOString()
-      }));
-      setReviews(old =>
-        old.map(r =>
-          r.reviewId === selectedReview.reviewId
-            ? { ...r, replyComment: replyComment, replyUpdateTime: new Date().toISOString() }
-            : r
-        )
-      );
-    } else {
-      alert("回覆失敗: " + (data.response?.error || data.response?.message || "未知錯誤"));
+  async function handleReplySubmit() {
+    if (!selectedReview) return;
+    const replyComment = replyInputRef.current.value?.trim();
+    if (!replyComment) {
+      alert("請輸入回覆內容");
+      return;
     }
-  } catch (err) {
-    alert("送出失敗: " + err.message);
+    if (!customerId) {
+      alert("缺少 customerId，請重新登入");
+      return;
+    }
+    // 判斷是否要覆蓋
+    if (selectedReview.replyComment && selectedReview.replyComment.trim() !== "") {
+      const ok = window.confirm(
+        `此評論已經有回覆：\n\n${selectedReview.replyComment}\n\n確定要覆蓋嗎？`
+      );
+      if (!ok) return;
+    } else {
+      const ok = window.confirm(`確定要送出回覆嗎？`);
+      if (!ok) return;
+    }
+
+    // 組合 payload
+    const body = {
+      reviewId: selectedReview.reviewId,
+      customer_id: customerId,
+      replyComment,
+      accountId: selectedReview.accountId,
+      locationId: selectedReview.locationId,
+      reply_by: "系統管理員", // 可以用 session user name
+    };
+
+    try {
+      const resp = await fetch("https://reply-reviews-84949832003.asia-east1.run.app", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await resp.json();
+      if (data.status === 200) {
+        alert("回覆成功！");
+        setSelectedReview(prev => ({
+          ...prev,
+          replyComment: replyComment,
+          replyUpdateTime: new Date().toISOString()
+        }));
+        setReviews(old =>
+          old.map(r =>
+            r.reviewId === selectedReview.reviewId
+              ? { ...r, replyComment: replyComment, replyUpdateTime: new Date().toISOString() }
+              : r
+          )
+        );
+      } else {
+        alert("回覆失敗: " + (data.response?.error || data.response?.message || "未知錯誤"));
+      }
+    } catch (err) {
+      alert("送出失敗: " + err.message);
+    }
   }
-}
 
 
 
@@ -155,6 +150,8 @@ export default function Page() {
   // 地點搜尋用
   const [locationSearch, setLocationSearch] = useState("");
 
+  //回覆評論用
+  const replyInputRef = useRef();
   // 日期區間
   const [startDate, setStartDate] = useState(getNDaysAgoStr(30));
   const [endDate, setEndDate] = useState(getYesterdayStr());
@@ -475,7 +472,6 @@ export default function Page() {
                 <div style={{ color: "#666", fontSize: "0.96rem", marginBottom: 6 }}>
                   回覆內容
                 </div>
-                const replyInputRef = useRef();
                 <textarea
                   className="reviews-reply-input"
                   placeholder="輸入你的回覆內容…"
