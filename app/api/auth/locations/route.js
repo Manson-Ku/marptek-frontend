@@ -28,24 +28,23 @@ export async function GET(request) {
       name,
       title,
       customer_id,
-      storeCode,
-      storefrontAddress,
-      phoneNumbers,
-      categories,
-      websiteUri,
-      metadata,
-      profile,
-      labels,
-      openInfo,
-      latlng,
-      regularHours,
+      #storeCode,
+      #storefrontAddress,
+      #phoneNumbers,
+      #categories,
+      #websiteUri,
+      #metadata,
+      #profile,
+      #labels,
+      #openInfo,
+      #latlng,
+      #regularHours,
       is_active,
       upd_datetime,
-      upd_datetime_review
     FROM \`gbp-management-marptek.gbp_location.list\`
     WHERE customer_id = @customer_id
     ORDER BY upd_datetime DESC
-    LIMIT 200
+    LIMIT 9999
   `
 
   try {
