@@ -269,7 +269,7 @@ export default function Page() {
       alert("送出失敗: " + err.message);
     }
   }
-  // 刪除回覆
+  // 刪除回覆（新版，呼叫 DELETE，payload 放 body）
   async function handleDeleteReply() {
     if (!selectedReview) return;
     if (!selectedReview.replyComment || selectedReview.replyComment.trim() === "") return;
@@ -286,7 +286,6 @@ export default function Page() {
     const body = {
       reviewId: selectedReview.reviewId,
       customer_id: customerId,
-      replyComment: "", // 傳空字串視為刪除
       accountId: selectedReview.accountId,
       locationId: selectedReview.locationId,
       reply_by: "系統管理員",
@@ -294,7 +293,7 @@ export default function Page() {
 
     try {
       const resp = await fetch("https://reply-reviews-84949832003.asia-east1.run.app", {
-        method: "POST",
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
