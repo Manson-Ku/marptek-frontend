@@ -269,7 +269,59 @@ export default function Page() {
       alert("送出失敗: " + err.message);
     }
   }
-  
+  // 刪除回覆
+  async function handleDeleteReply() {
+    if (!selectedReview) return;
+    if (!selectedReview.replyComment || selectedReview.replyComment.trim() === "") return;
+    const ok = window.confirm(
+      "⚠️ 你確定要刪除這則回覆嗎？（刪除後使用者將看不到原本的回覆內容，且可以再次編輯與送出）"
+    );
+    if (!ok) return;
+
+    if (!customerId) {
+      alert("缺少 customerId，請重新登入");
+      return;
+    }
+
+    const body = {
+      reviewId: selectedReview.reviewId,
+      customer_id: customerId,
+      replyComment: "", // 傳空字串視為刪除
+      accountId: selectedReview.accountId,
+      locationId: selectedReview.locationId,
+      reply_by: "系統管理員",
+    };
+
+    try {
+      const resp = await fetch("https://reply-reviews-84949832003.asia-east1.run.app", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await resp.json();
+      if (data.status === 200) {
+        alert("已刪除回覆！");
+        setSelectedReview(prev => ({
+          ...prev,
+          replyComment: "",
+          replyUpdateTime: new Date().toISOString()
+        }));
+        setReviews(old =>
+          old.map(r =>
+            r.reviewId === selectedReview.reviewId
+              ? { ...r, replyComment: "", replyUpdateTime: new Date().toISOString() }
+              : r
+          )
+        );
+        // 清除 textarea
+        if (replyInputRef.current) replyInputRef.current.value = "";
+      } else {
+        alert("刪除失敗: " + (data.response?.error || data.response?.message || "未知錯誤"));
+      }
+    } catch (err) {
+      alert("刪除失敗: " + err.message);
+    }
+  }
   return (
     <AuthenticatedLayout noContainer>
       <div className="reviews-container">
@@ -477,10 +529,36 @@ export default function Page() {
                   defaultValue={selectedReview.replyComment || ""}
                   ref={replyInputRef}
                 />
-                <div className="reviews-detail-actions">
-                  <button className="reviews-reply-btn" onClick={handleReplySubmit}>
+                <div className="reviews-detail-actions" style={{ display: "flex", gap: 12 }}>
+                  <button
+                    className="reviews-reply-btn"
+                    onClick={handleReplySubmit}
+                  >
                     送出回覆
                   </button>
+                  {/* 只有有回覆時顯示刪除按鈕 */}
+                  {selectedReview.replyComment && (
+                    <button
+                      className="reviews-delete-reply-btn"
+                      style={{
+                        background: "#e53935",
+                        color: "#fff",
+                        border: "none",
+                        padding: "7px 18px",
+                        borderRadius: 4,
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        fontSize: "0.98rem",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                        transition: "background 0.18s"
+                      }}
+                      onClick={handleDeleteReply}
+                      onMouseOver={e => e.currentTarget.style.background = "#c62828"}
+                      onMouseOut={e => e.currentTarget.style.background = "#e53935"}
+                    >
+                      刪除回覆
+                    </button>
+                  )}
                 </div>
                 {selectedReview.replyComment && (
                   <div style={{ color: "#46a", fontSize: "0.93rem", marginTop: 16 }}>
