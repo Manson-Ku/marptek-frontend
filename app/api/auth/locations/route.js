@@ -45,6 +45,7 @@ export async function GET(request) {
     FROM \`gbp-management-marptek.gbp_location.list\`
     WHERE customer_id = @customer_id
     ORDER BY upd_datetime DESC
+    LIMIT 200
   `
 
   try {
