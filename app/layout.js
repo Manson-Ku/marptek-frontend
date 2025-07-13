@@ -1,5 +1,6 @@
 import './globals.css'
 import Providers from '@/components/Providers'
+import ErrorReload from '@/components/ErrorReload' // <--- 新增這行
 
 export const metadata = {
   title: 'MARPTEK',
@@ -11,6 +12,7 @@ export default function RootLayout({ children }) {
     <html lang="zh-TW">
       <body>
         <Providers>
+          <ErrorReload /> {/* <--- 加在最外層，全站自動生效 */}
           {children}
         </Providers>
       </body>
