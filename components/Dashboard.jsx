@@ -158,8 +158,16 @@ export default function Dashboard() {
           {customerId && (
             <div className="dashboard-banner">
               🎉 歡迎你，客戶代碼：<strong>{customerId}</strong>
-              {hasAccess ? (
-                <span className="dashboard-gbp-auth">
+              {loading || hasAccess === null ? (
+                <span style={{ marginLeft: 16, color: '#888', fontSize: 15 }}>
+                  <svg className="dashboard-gbp-auth-icon" viewBox="0 0 20 20" fill="currentColor" width={18} style={{ verticalAlign: 'middle', marginRight: 4 }}>
+                    <circle cx="10" cy="10" r="8" stroke="#bbb" strokeWidth="2" fill="none" />
+                    <circle cx="10" cy="10" r="5" stroke="#eee" strokeWidth="2" fill="none" />
+                  </svg>
+                  正在檢查授權...
+                </span>
+              ) : hasAccess ? (
+                <span className="dashboard-gbp-auth" style={{ marginLeft: 16 }}>
                   <svg className="dashboard-gbp-auth-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path
                       fillRule="evenodd"
@@ -173,6 +181,7 @@ export default function Dashboard() {
                 <button
                   onClick={handleConsent}
                   className="dashboard-gbp-auth-btn"
+                  style={{ marginLeft: 16 }}
                 >
                   👉 點此完成 GBP 授權
                 </button>

@@ -10,15 +10,25 @@ export function useHasGBPAccess() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (status === 'loading') return
-    if (status !== 'authenticated' || !session?.idToken) {
-      setHasAccess(false)
+    if (status === 'loading') {
+      setLoading(true)
+      return
+    }
+    if (status !== 'authenticated') {
+      setHasAccess(null)
+      setLoading(false)
+      return
+    }
+    if (!session?.idToken) {
+      setHasAccess(null)
       setLoading(false)
       return
     }
 
     const checkAccess = async () => {
       try {
+        setLoading(true)
+        setError(null)
         const res = await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/check-gbp-access', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
