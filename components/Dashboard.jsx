@@ -180,7 +180,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* --- Accordion 區塊，帳戶＋地點聯動同一個摺疊 --- */}
+          {/* --- Accordion 區塊，帳戶＋地點聯動同一個摺疊，並排 --- */}
           <div className="dashboard-accordion" style={{ marginTop: 32 }}>
             <div className="dashboard-accordion-section" style={{ marginBottom: 18 }}>
               <button
@@ -200,9 +200,13 @@ export default function Dashboard() {
                 {showSection ? '▼' : '▶'} 地區群組/帳戶列表 & 地點列表（{filteredLocations.length}）
               </button>
               {showSection && (
-                <div>
-                  {/* 帳戶群組/帳戶列表 */}
-                  <div className="dashboard-card" style={{ marginBottom: 24 }}>
+                <div className="dashboard-row" style={{
+                  display: 'flex',
+                  gap: 24,
+                  alignItems: 'flex-start'
+                }}>
+                  {/* 帳戶群組/帳戶列表（左） */}
+                  <div className="dashboard-card" style={{ flex: '1 1 0', minWidth: 0 }}>
                     <h3 style={{ marginTop: 0 }}>地區群組/帳戶列表</h3>
                     {accountLoading && <div>載入中...</div>}
                     {accountError && <div style={{ color: 'red' }}>{accountError}</div>}
@@ -232,8 +236,8 @@ export default function Dashboard() {
                       </ul>
                     ) : !accountLoading && <div>找不到資料</div>}
                   </div>
-                  {/* 地點列表 */}
-                  <div className="dashboard-card">
+                  {/* 地點列表（右） */}
+                  <div className="dashboard-card" style={{ flex: '1 1 0', minWidth: 0 }}>
                     <h3 style={{ marginTop: 0 }}>地點列表（{filteredLocations.length}）</h3>
                     <ul className="location-list">
                       {locationsLoading ? (
