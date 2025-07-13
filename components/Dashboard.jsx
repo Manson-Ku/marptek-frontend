@@ -27,9 +27,8 @@ export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 100
 
-  // 區塊收合控制
-  const [showAccountSection, setShowAccountSection] = useState(false)
-  const [showLocationSection, setShowLocationSection] = useState(false)
+  // 區塊收合控制：只剩一個收合狀態
+  const [showSection, setShowSection] = useState(false)
 
   // 讀取帳戶群組
   useEffect(() => {
@@ -69,7 +68,7 @@ export default function Dashboard() {
     }
   }, [customerId])
 
-  // 左側帳戶按鈕的 onClick handler
+  // 帳戶按鈕 onClick
   const handleAccountClick = (accountResourceName) => {
     setSelectedAccountID(accountResourceName)
     setCurrentPage(1)
@@ -117,7 +116,7 @@ export default function Dashboard() {
     )
   }
 
-  // 👉 GBP 授權按鈕
+  // GBP 授權按鈕
   const handleConsent = () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
     const redirectUri = process.env.NEXT_PUBLIC_GBP_CALLBACK_URL
@@ -155,7 +154,7 @@ export default function Dashboard() {
             <span>（預留圖表區，例如評論圓餅圖、曲線圖等）</span>
           </div>
 
-          {/* --- 頁首 banner 與授權 --- */}
+          {/* --- Banner 與授權 --- */}
           {customerId && (
             <div className="dashboard-banner">
               🎉 歡迎你，客戶代碼：<strong>{customerId}</strong>
@@ -181,13 +180,12 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* --- Accordion 區塊 --- */}
+          {/* --- Accordion 區塊，帳戶＋地點聯動同一個摺疊 --- */}
           <div className="dashboard-accordion" style={{ marginTop: 32 }}>
-            {/* --- 帳戶群組/帳戶列表 --- */}
             <div className="dashboard-accordion-section" style={{ marginBottom: 18 }}>
               <button
                 className="accordion-toggle"
-                onClick={() => setShowAccountSection(v => !v)}
+                onClick={() => setShowSection(v => !v)}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -199,94 +197,75 @@ export default function Dashboard() {
                   textAlign: 'left'
                 }}
               >
-                {showAccountSection ? '▼' : '▶'} 地區群組 / 帳戶列表
+                {showSection ? '▼' : '▶'} 地區群組/帳戶列表 & 地點列表（{filteredLocations.length}）
               </button>
-              {showAccountSection && (
-                <div className="dashboard-card">
-                  <h3 style={{ marginTop: 0 }}>地區群組/帳戶列表</h3>
-                  {accountLoading && <div>載入中...</div>}
-                  {accountError && <div style={{ color: 'red' }}>{accountError}</div>}
-                  {accountData && accountData.length > 0 ? (
-                    <ul style={{ paddingLeft: 0 }}>
-                      <li>
-                        <button
-                          className={`account-btn${selectedAccountID === null ? ' active' : ''}`}
-                          onClick={() => handleAccountClick(null)}
-                        >全部</button>
-                      </li>
-                      {accountData.map(acc => (
-                        <li key={acc.name}>
+              {showSection && (
+                <div>
+                  {/* 帳戶群組/帳戶列表 */}
+                  <div className="dashboard-card" style={{ marginBottom: 24 }}>
+                    <h3 style={{ marginTop: 0 }}>地區群組/帳戶列表</h3>
+                    {accountLoading && <div>載入中...</div>}
+                    {accountError && <div style={{ color: 'red' }}>{accountError}</div>}
+                    {accountData && accountData.length > 0 ? (
+                      <ul style={{ paddingLeft: 0 }}>
+                        <li>
                           <button
-                            className={`account-btn${selectedAccountID === acc.name ? ' active' : ''}`}
-                            onClick={() => handleAccountClick(acc.name)}
-                          >
-                            {acc.accountName || acc.name}
-                          </button>
-                          <div className="account-meta">
-                            ID: {acc.name}<br />
-                            有效: {String(acc.is_active)}<br />
-                            更新: {typeof acc.upd_datetime === 'string' ? acc.upd_datetime : acc.upd_datetime?.value}
-                          </div>
+                            className={`account-btn${selectedAccountID === null ? ' active' : ''}`}
+                            onClick={() => handleAccountClick(null)}
+                          >全部</button>
                         </li>
-                      ))}
+                        {accountData.map(acc => (
+                          <li key={acc.name}>
+                            <button
+                              className={`account-btn${selectedAccountID === acc.name ? ' active' : ''}`}
+                              onClick={() => handleAccountClick(acc.name)}
+                            >
+                              {acc.accountName || acc.name}
+                            </button>
+                            <div className="account-meta">
+                              ID: {acc.name}<br />
+                              有效: {String(acc.is_active)}<br />
+                              更新: {typeof acc.upd_datetime === 'string' ? acc.upd_datetime : acc.upd_datetime?.value}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : !accountLoading && <div>找不到資料</div>}
+                  </div>
+                  {/* 地點列表 */}
+                  <div className="dashboard-card">
+                    <h3 style={{ marginTop: 0 }}>地點列表（{filteredLocations.length}）</h3>
+                    <ul className="location-list">
+                      {locationsLoading ? (
+                        <li className="location-item">載入中...</li>
+                      ) : displayLocations.length > 0 ? (
+                        displayLocations.map(loc => (
+                          <li className="location-item" key={loc.name}>
+                            <strong>名稱：{loc.title || '（未命名）'}</strong><br />
+                            ID：{loc.name}<br />
+                            有效: {String(loc.is_active)}<br />
+                            更新: {typeof loc.upd_datetime === 'string'
+                              ? loc.upd_datetime
+                              : loc.upd_datetime?.value || ''}
+                          </li>
+                        ))
+                      ) : (
+                        <li className="location-item">找不到地點資料</li>
+                      )}
                     </ul>
-                  ) : !accountLoading && <div>找不到資料</div>}
-                </div>
-              )}
-            </div>
-
-            {/* --- 地點列表/分頁 --- */}
-            <div className="dashboard-accordion-section" style={{ marginBottom: 18 }}>
-              <button
-                className="accordion-toggle"
-                onClick={() => setShowLocationSection(v => !v)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontWeight: 600,
-                  fontSize: 20,
-                  padding: '12px 0',
-                  cursor: 'pointer',
-                  width: '100%',
-                  textAlign: 'left'
-                }}
-              >
-                {showLocationSection ? '▼' : '▶'} 地點列表（{filteredLocations.length}）
-              </button>
-              {showLocationSection && (
-                <div className="dashboard-card">
-                  <h3 style={{ marginTop: 0 }}>地點列表（{filteredLocations.length}）</h3>
-                  <ul className="location-list">
-                    {locationsLoading ? (
-                      <li className="location-item">載入中...</li>
-                    ) : displayLocations.length > 0 ? (
-                      displayLocations.map(loc => (
-                        <li className="location-item" key={loc.name}>
-                          <strong>名稱：{loc.title || '（未命名）'}</strong><br />
-                          ID：{loc.name}<br />
-                          有效: {String(loc.is_active)}<br />
-                          更新: {typeof loc.upd_datetime === 'string'
-                            ? loc.upd_datetime
-                            : loc.upd_datetime?.value || ''}
-                        </li>
-                      ))
-                    ) : (
-                      <li className="location-item">找不到地點資料</li>
-                    )}
-                  </ul>
-                  <div className="pagination">
-                    {Array.from({ length: pageCount }).map((_, idx) =>
-                      <button
-                        className={`pagination-btn${currentPage === idx + 1 ? ' active' : ''}`}
-                        onClick={() => setCurrentPage(idx + 1)}
-                        key={idx}
-                      >{idx + 1}</button>
-                    )}
+                    <div className="pagination">
+                      {Array.from({ length: pageCount }).map((_, idx) =>
+                        <button
+                          className={`pagination-btn${currentPage === idx + 1 ? ' active' : ''}`}
+                          onClick={() => setCurrentPage(idx + 1)}
+                          key={idx}
+                        >{idx + 1}</button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
             </div>
-
             {/* --- 右側 placeholder，保留不收合 --- */}
             <div className="dashboard-card">Placeholder 3</div>
           </div>
