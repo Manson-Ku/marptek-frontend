@@ -26,6 +26,14 @@
     "goLogin": "Go to Login"
   },
   "Sidebar": {
+    "overview": "Overview",
+    "businessProfile": "Business Profile",
+    "reputation": "Reputation Center",
+    "marketingTools": "Marketing Tools",
+    "analytics": "Analytics",
+    "ranking": "Ranking Optimization",
+    "aiAdvisor": "AI Advisor",
+    
     "summary": "Overview",
 
     "googleQA": "Google QA",

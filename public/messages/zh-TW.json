@@ -26,6 +26,14 @@
     "goLogin": "前往登入"
   },
   "Sidebar": {
+    "overview": "總覽",
+    "businessProfile": "商家檔案管理",
+    "reputation": "輿情中心",
+    "marketingTools": "行銷工具",
+    "analytics": "數據分析",
+    "ranking": "排名優化",
+    "aiAdvisor": "AI 顧問",
+    
     "summary": "總覽",
 
     "googleQA": "Google QA",
