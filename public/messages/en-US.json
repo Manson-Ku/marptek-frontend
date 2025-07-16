@@ -69,10 +69,17 @@
     "section_ranking": "Ranking Optimization"
   },
   "Header": {
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "helpCenter": "Help Center",
+    "knowledgeBase": "Knowledge Base",
+    "qa": "How-to Guides",
+    "tutorials": "Tutorials",
+    "webinars": "Webinars",
+    "faq": "FAQ",
+    "support": "Support"
   },
   "Profile": {
     "logout": "Log out",
-    "startManagingGBP": "Start Managing GBP"
+    "startManagingGBP": "Account"
   }
 }

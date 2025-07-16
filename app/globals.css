@@ -91,7 +91,57 @@
       height: 100%;
       background: #cbd5e1;
       border-radius: 9999px;
-    }    
+    }
+    
+    .help-dropdown {
+      position: relative;
+      display: inline-block;
+      margin-right: 1rem;
+    }
+    .help-dropdown-btn {
+      display: flex;
+      align-items: center;
+      background: transparent;
+      border: none;
+      color: #334155;
+      font-size: 0.98rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0.4rem 0.75rem;
+      border-radius: 0.45rem;
+      transition: background 0.18s;
+    }
+    .help-dropdown-btn:hover,
+    .help-dropdown-btn:focus {
+      background: #f1f5f9;
+    }
+    .help-dropdown-menu {
+      position: absolute;
+      top: 110%;
+      left: 0;
+      min-width: 170px;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.09);
+      border-radius: 0.45rem;
+      z-index: 100;
+      padding: 0.2rem 0;
+    }
+    .help-dropdown-item {
+      display: block;
+      color: #334155;
+      text-decoration: none;
+      font-size: 0.96rem;
+      padding: 0.55rem 1.15rem;
+      border: none;
+      background: none;
+      cursor: pointer;
+      transition: background 0.17s, color 0.17s;
+    }
+    .help-dropdown-item:hover {
+      background: #e5e9ef;
+      color: #2563eb;
+    }
+
   
 /* ========================
    🟡 Dashboard 進階優化區塊
