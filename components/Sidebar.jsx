@@ -8,7 +8,6 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
-// 點擊紀錄
 function recordSidebarUsage(key) {
   if (typeof window === 'undefined') return
   const stats = JSON.parse(localStorage.getItem('sidebarUsage') || '{}')
@@ -27,7 +26,7 @@ function getTopUsages(n = 5) {
 export default function Sidebar() {
   const t = useTranslations('Sidebar')
   const pathname = usePathname()
-  const [openKey, setOpenKey] = useState(null)
+  const [openKeys, setOpenKeys] = useState([])
   const [topUsageKeys, setTopUsageKeys] = useState([])
 
   const groups = [
@@ -96,35 +95,39 @@ export default function Sidebar() {
       icon: <Brain size={20} />,
       label: t('aiAdvisor'),
       items: [
-        { key: 'storeSuggestion', href: '/section_aiAdvisor/storeSuggestion', icon: <BarChart3 size={18} /> },   // 營運建議
-        { key: 'localMarketing', href: '/section_aiAdvisor/localMarketing', icon: <Megaphone size={18} /> },     // 在地行銷
-        { key: 'addresSuggestion', href: '/section_aiAdvisor/addresSuggestion', icon: <LocateFixed size={18} /> } // 選址
+        { key: 'storeSuggestion', href: '/section_aiAdvisor/storeSuggestion', icon: <BarChart3 size={18} /> },
+        { key: 'localMarketing', href: '/section_aiAdvisor/localMarketing', icon: <Megaphone size={18} /> },
+        { key: 'addresSuggestion', href: '/section_aiAdvisor/addresSuggestion', icon: <LocateFixed size={18} /> }
       ]
     }
   ]
 
-  // 所有子項展平成一維
   const allItemsFlat = groups.flatMap(g => g.items)
-  // 當前常用 key 對應到完整 item 資料（不含 summary）
   const topUsageItems = allItemsFlat.filter(item => topUsageKeys.includes(item.key) && item.key !== 'summary')
 
   useEffect(() => {
     setTopUsageKeys(getTopUsages(5))
   }, [pathname])
 
-  // 自動展開 active group
+  // 自動展開有 active 的 group
   useEffect(() => {
     for (let group of groups) {
       if (group.items.some(item => pathname === item.href)) {
-        setOpenKey(group.key)
+        setOpenKeys(prev => prev.includes(group.key) ? prev : [...prev, group.key])
         return
       }
     }
-    setOpenKey(null)
   }, [pathname])
 
   function handleSidebarClick(item) {
     recordSidebarUsage(item.key)
+  }
+  function handleGroupToggle(groupKey) {
+    setOpenKeys(prev =>
+      prev.includes(groupKey)
+        ? prev.filter(key => key !== groupKey)
+        : [...prev, groupKey]
+    )
   }
 
   return (
@@ -138,33 +141,28 @@ export default function Sidebar() {
         {groups.map(group => {
           // only for overview group, handle special insert for 常用鏈結
           let groupItems = group.items
-          if (group.key === 'overview' && openKey === 'overview' && topUsageItems.length > 0) {
-            // 複製 summary item
+          if (group.key === 'overview' && openKeys.includes('overview') && topUsageItems.length > 0) {
+            // summary + divider + 常用
             const result = [group.items[0]]
-            result.push({
-              key: '__divider__', // fake key for divider
-            })
-            // 插入 topUsageItems
-            for (const item of topUsageItems) {
-              result.push(item)
-            }
+            result.push({ key: '__divider__' })
+            for (const item of topUsageItems) result.push(item)
             groupItems = result
           }
 
           return (
             <div key={group.key}>
               <button
-                className={`sidebar-group-btn${openKey === group.key ? ' active' : ''}`}
-                onClick={() => setOpenKey(openKey === group.key ? null : group.key)}
-                aria-expanded={openKey === group.key}
+                className={`sidebar-group-btn${openKeys.includes(group.key) ? ' active' : ''}`}
+                onClick={() => handleGroupToggle(group.key)}
+                aria-expanded={openKeys.includes(group.key)}
                 aria-controls={`sidebar-group-${group.key}`}
                 type="button"
               >
                 <span className="icon">{group.icon}</span>
                 <span>{group.label}</span>
-                <span className="arrow">{openKey === group.key ? '▲' : '▼'}</span>
+                <span className="arrow">{openKeys.includes(group.key) ? '▲' : '▼'}</span>
               </button>
-              {openKey === group.key && groupItems.length > 0 && (
+              {openKeys.includes(group.key) && groupItems.length > 0 && (
                 <nav id={`sidebar-group-${group.key}`}>
                   {groupItems.map((item, idx) =>
                     item.key === '__divider__' ? (
