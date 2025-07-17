@@ -8,12 +8,14 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
+// 點擊次數記錄
 function recordSidebarUsage(key) {
   if (typeof window === 'undefined') return
   const stats = JSON.parse(localStorage.getItem('sidebarUsage') || '{}')
   stats[key] = (stats[key] || 0) + 1
   localStorage.setItem('sidebarUsage', JSON.stringify(stats))
 }
+// 取得點擊最多的前 n 個 key
 function getTopUsages(n = 5) {
   if (typeof window === 'undefined') return []
   const stats = JSON.parse(localStorage.getItem('sidebarUsage') || '{}')
@@ -102,6 +104,7 @@ export default function Sidebar() {
     }
   ]
 
+  // 攤平成一維所有子項
   const allItemsFlat = groups.flatMap(g => g.items)
   const topUsageItems = allItemsFlat.filter(item => topUsageKeys.includes(item.key) && item.key !== 'summary')
 
@@ -139,14 +142,19 @@ export default function Sidebar() {
 
       <div className="sidebar-middle">
         {groups.map(group => {
-          // only for overview group, handle special insert for 常用鏈結
+          // overview分組特殊插入
           let groupItems = group.items
-          if (group.key === 'overview' && openKeys.includes('overview') && topUsageItems.length > 0) {
+          if (group.key === 'overview' && openKeys.includes('overview')) {
             // summary + divider + 常用
-            const result = [group.items[0]]
-            result.push({ key: '__divider__' })
-            for (const item of topUsageItems) result.push(item)
-            groupItems = result
+            groupItems = [
+              group.items[0],
+              ...(topUsageItems.length > 0
+                ? [
+                  { key: '__fav_divider__' },
+                  ...topUsageItems
+                ] : []
+              )
+            ]
           }
 
           return (
@@ -165,14 +173,10 @@ export default function Sidebar() {
               {openKeys.includes(group.key) && groupItems.length > 0 && (
                 <nav id={`sidebar-group-${group.key}`}>
                   {groupItems.map((item, idx) =>
-                    item.key === '__divider__' ? (
-                      <div key="divider" style={{ borderBottom: '1px solid #e5e7eb', margin: '8px 0 2px 0', opacity: 0.7 }}>
-                        <div
-                          className="sidebar-section-title"
-                          style={{ marginTop: 2, marginBottom: 4, fontWeight: 400, color: '#888', fontSize: '0.82rem' }}
-                        >
-                          --- 常用鏈結 ---
-                        </div>
+                    item.key === '__fav_divider__' ? (
+                      <div key="fav-divider" className="sidebar-fav-divider">
+                        <span className="sidebar-fav-star">★</span>
+                        <span className="sidebar-fav-title">{t('favoriteShortcuts') || '常用功能'}</span>
                       </div>
                     ) : (
                       <a
@@ -180,6 +184,7 @@ export default function Sidebar() {
                         href={item.href}
                         className={pathname === item.href ? 'active' : ''}
                         onClick={() => handleSidebarClick(item)}
+                        style={item.key !== 'summary' && group.key === 'overview' && topUsageItems.find(i => i.key === item.key) ? { fontSize: '0.95em', opacity: 0.94, paddingLeft: '2.2rem' } : undefined}
                       >
                         {item.icon}
                         <span>{t(item.key)}</span>
