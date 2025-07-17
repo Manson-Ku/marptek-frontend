@@ -4,19 +4,17 @@ import { useTranslations } from 'next-intl'
 import { usePathname } from 'next/navigation'
 import {
   Home, Store, MessageSquare, Star, Bot, QrCode, BellRing,
-  BarChart3, KeyRound, FileText, ListOrdered, Sparkles, ShieldCheck, Info, Landmark, Link, Image, Trophy, MapPin, TrendingUp, Settings, Brain,Megaphone,LocateFixed
+  BarChart3, KeyRound, FileText, ListOrdered, Sparkles, ShieldCheck, Info, Landmark, Link, Image, Trophy, MapPin, TrendingUp, Settings, Brain, Megaphone, LocateFixed
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
-// 紀錄點擊次數
+// 點擊紀錄
 function recordSidebarUsage(key) {
   if (typeof window === 'undefined') return
   const stats = JSON.parse(localStorage.getItem('sidebarUsage') || '{}')
   stats[key] = (stats[key] || 0) + 1
   localStorage.setItem('sidebarUsage', JSON.stringify(stats))
 }
-
-// 取得點擊最多的前 n 個 key
 function getTopUsages(n = 5) {
   if (typeof window === 'undefined') return []
   const stats = JSON.parse(localStorage.getItem('sidebarUsage') || '{}')
@@ -107,12 +105,9 @@ export default function Sidebar() {
 
   // 所有子項展平成一維
   const allItemsFlat = groups.flatMap(g => g.items)
+  // 當前常用 key 對應到完整 item 資料（不含 summary）
+  const topUsageItems = allItemsFlat.filter(item => topUsageKeys.includes(item.key) && item.key !== 'summary')
 
-  // 當前常用 key 對應到完整 item 資料
-  const topUsageItems = allItemsFlat
-    .filter(item => topUsageKeys.includes(item.key) && item.key !== 'summary') // 排除 summary
-
-  // 每次路徑變動都刷新常用排行
   useEffect(() => {
     setTopUsageKeys(getTopUsages(5))
   }, [pathname])
@@ -128,7 +123,6 @@ export default function Sidebar() {
     setOpenKey(null)
   }, [pathname])
 
-  // 點擊記錄
   function handleSidebarClick(item) {
     recordSidebarUsage(item.key)
   }
@@ -141,58 +135,64 @@ export default function Sidebar() {
       </div>
 
       <div className="sidebar-middle">
-        {groups.map(group => (
-          <div key={group.key}>
-            <button
-              className={`sidebar-group-btn${openKey === group.key ? ' active' : ''}`}
-              onClick={() => setOpenKey(openKey === group.key ? null : group.key)}
-              aria-expanded={openKey === group.key}
-              aria-controls={`sidebar-group-${group.key}`}
-              type="button"
-            >
-              <span className="icon">{group.icon}</span>
-              <span>{group.label}</span>
-              <span className="arrow">{openKey === group.key ? '▲' : '▼'}</span>
-            </button>
-            {/* 總覽分組插入常用鏈結 */}
-            {group.key === 'overview' && topUsageItems.length > 0 && (
-              <>
-                <div style={{ borderBottom: '1px solid #e5e7eb', margin: '8px 0 2px 0', opacity: 0.7 }} />
-                <div className="sidebar-section-title" style={{ marginTop: 2, marginBottom: 4, fontWeight: 400, color: '#888', fontSize: '0.82rem' }}>
-                  --- 常用鏈結 ---
-                </div>
-                <nav>
-                  {topUsageItems.map(item => (
-                    <a
-                      key={item.key}
-                      href={item.href}
-                      className={pathname === item.href ? 'active' : ''}
-                      onClick={() => handleSidebarClick(item)}
-                    >
-                      {item.icon}
-                      <span>{t(item.key)}</span>
-                    </a>
-                  ))}
+        {groups.map(group => {
+          // only for overview group, handle special insert for 常用鏈結
+          let groupItems = group.items
+          if (group.key === 'overview' && openKey === 'overview' && topUsageItems.length > 0) {
+            // 複製 summary item
+            const result = [group.items[0]]
+            result.push({
+              key: '__divider__', // fake key for divider
+            })
+            // 插入 topUsageItems
+            for (const item of topUsageItems) {
+              result.push(item)
+            }
+            groupItems = result
+          }
+
+          return (
+            <div key={group.key}>
+              <button
+                className={`sidebar-group-btn${openKey === group.key ? ' active' : ''}`}
+                onClick={() => setOpenKey(openKey === group.key ? null : group.key)}
+                aria-expanded={openKey === group.key}
+                aria-controls={`sidebar-group-${group.key}`}
+                type="button"
+              >
+                <span className="icon">{group.icon}</span>
+                <span>{group.label}</span>
+                <span className="arrow">{openKey === group.key ? '▲' : '▼'}</span>
+              </button>
+              {openKey === group.key && groupItems.length > 0 && (
+                <nav id={`sidebar-group-${group.key}`}>
+                  {groupItems.map((item, idx) =>
+                    item.key === '__divider__' ? (
+                      <div key="divider" style={{ borderBottom: '1px solid #e5e7eb', margin: '8px 0 2px 0', opacity: 0.7 }}>
+                        <div
+                          className="sidebar-section-title"
+                          style={{ marginTop: 2, marginBottom: 4, fontWeight: 400, color: '#888', fontSize: '0.82rem' }}
+                        >
+                          --- 常用鏈結 ---
+                        </div>
+                      </div>
+                    ) : (
+                      <a
+                        key={item.key}
+                        href={item.href}
+                        className={pathname === item.href ? 'active' : ''}
+                        onClick={() => handleSidebarClick(item)}
+                      >
+                        {item.icon}
+                        <span>{t(item.key)}</span>
+                      </a>
+                    )
+                  )}
                 </nav>
-              </>
-            )}
-            {openKey === group.key && group.items.length > 0 && (
-              <nav id={`sidebar-group-${group.key}`}>
-                {group.items.map(item => (
-                  <a
-                    key={item.key}
-                    href={item.href}
-                    className={pathname === item.href ? 'active' : ''}
-                    onClick={() => handleSidebarClick(item)}
-                  >
-                    {item.icon}
-                    <span>{t(item.key)}</span>
-                  </a>
-                ))}
-              </nav>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {/* 設定 */}
