@@ -55,18 +55,12 @@
     "linkManagement": "Link Management",
     "imageManagement": "Image Management",
 
-    "competitorsLocal": "Local Competitor Analysis",
-    "competitorsRegion": "Regional Competitor Analysis",
-
     "localRank": "Local Ranking",
     "localSeo": "Map SEO Optimization",
 
-    "section_reviews": "Reviews & QA",
-    "section_performance": "Performance",
-    "section_posts": "Post Management",
-    "section_locations": "Business Info",
-    "section_competitors": "Competitor Monitoring",
-    "section_ranking": "Ranking Optimization"
+    "storeSuggestion": "Operation Suggestions",
+    "localMarketing": "Local Marketing Suggestions",
+    "addresSuggestion": "Location Recommendation"
   },
   "Header": {
     "dashboard": "Dashboard",
