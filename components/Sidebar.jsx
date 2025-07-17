@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl'
 import { usePathname } from 'next/navigation'
 import {
-  Home, Store, MessageSquare, Star, Bot, QrCode, BellRing,
+  Home,LayoutDashboard, Store, MessageSquare, Star, Bot, QrCode, BellRing,
   BarChart3, KeyRound, FileText, ListOrdered, Sparkles, ShieldCheck, Info, Landmark, Link, Image, Trophy, MapPin, TrendingUp, Settings, Brain, Megaphone, LocateFixed
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
@@ -37,7 +37,7 @@ export default function Sidebar() {
       icon: <Home size={20} />,
       label: t('overview'),
       items: [
-        { key: 'summary', href: '/', icon: <Home size={18} /> }
+        { key: 'summary', href: '/', icon: <LayoutDashboard size={18} /> }
       ]
     },
     {
