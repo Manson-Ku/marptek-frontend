@@ -1,63 +1,47 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { useSession } from 'next-auth/react'
+
+const fetcher = async ([url, idToken]) => {
+  if (!idToken) return null
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id_token: idToken }),
+  })
+  const data = await res.json()
+  // SWR 規則：只丟 exception 才會進 error
+  if (!res.ok) throw new Error(data?.error || '權限查詢失敗')
+  return data
+}
 
 export function useHasGBPAccess() {
   const { data: session, status } = useSession()
-  const [hasAccess, setHasAccess] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
 
-  useEffect(() => {
-    if (status === 'loading') {
-      setLoading(true)
-      return
+  // SWR key 若為 null 不會發 request（等 idToken 有才查）
+  const shouldFetch =
+    status === 'authenticated' && !!session?.idToken
+
+  const { data, error, isLoading } = useSWR(
+    shouldFetch
+      ? [
+          'https://marptek-login-api-84949832003.asia-east1.run.app/check-gbp-access',
+          session.idToken,
+        ]
+      : null,
+    fetcher,
+    {
+      // 你可以根據需要調整 refreshInterval（自動輪詢）
+      // refreshInterval: 60000, // 每 1 分鐘查一次
+      // revalidateOnFocus: true, // 切回畫面自動刷新（預設就是 true）
     }
-    if (status !== 'authenticated') {
-      setHasAccess(null)
-      setLoading(false)
-      return
-    }
-    if (!session?.idToken) {
-      setHasAccess(null)
-      setLoading(false)
-      return
-    }
+  )
 
-    const checkAccess = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const res = await fetch('https://marptek-login-api-84949832003.asia-east1.run.app/check-gbp-access', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id_token: session.idToken }),
-        })
-
-        const data = await res.json()
-
-        if (res.ok && data.hasGBPGranted === true) {
-          setHasAccess(true)
-        } else {
-          setHasAccess(false)
-        }
-      } catch (err) {
-        console.error('❌ 檢查權限失敗:', err)
-        setError(err.message)
-        setHasAccess(false)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    // 延遲執行避免跳畫面
-    const timer = setTimeout(() => {
-      checkAccess()
-    }, 500)
-
-    return () => clearTimeout(timer)
-  }, [status, session?.idToken])
-
-  return { hasAccess, loading, error }
+  return {
+    hasAccess: data?.hasGBPGranted ?? null,
+    loading: isLoading || status === 'loading',
+    error,
+  }
 }
