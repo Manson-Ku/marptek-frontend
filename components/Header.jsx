@@ -5,17 +5,35 @@ import LanguageSwitcher from '@/components/LanguageSwitcher'
 import { useSession } from 'next-auth/react'
 import { Book } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
+// 1. 直接 import Sidebar 的配置
+import { sidebarGroups } from '@/components/Sidebar'
 
 export default function Header({ onProfileClick }) {
-  const t = useTranslations('Header')
+  const t = useTranslations('Sidebar') // ← sidebar 分組與項目都在 Sidebar 命名空間
   const { data: session } = useSession()
+  const pathname = usePathname()
+
+  // 取得當前路徑對應 sidebar title（支援 group + item）
+  function getSidebarTitle(pathname) {
+    for (const group of sidebarGroups) {
+      for (const item of group.items) {
+        if (item.href === pathname) {
+          return t(item.key)
+        }
+      }
+    }
+    // fallback：首頁
+    if (pathname === '/' || pathname.startsWith('/dashboard')) return t('summary')
+    // fallback: 自定義
+    return ''
+  }
 
   // 教學中心
   function HelpDropdown() {
     const [open, setOpen] = useState(false)
     const dropdownRef = useRef(null)
 
-    // 點外面自動收合
     useEffect(() => {
       function handleClick(e) {
         if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -64,7 +82,9 @@ export default function Header({ onProfileClick }) {
 
   return (
     <header className="header">
-      <div className="header-title">{t('dashboard')}</div>
+      <div className="header-title">
+        {getSidebarTitle(pathname) || '－'}
+      </div>
       <div className="header-actions">
         <HelpDropdown />
         <div className="language-switcher-mini">
