@@ -6,45 +6,44 @@ import { useSession } from 'next-auth/react'
 import { Book } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
-// 1. 直接 import Sidebar 的配置
-import { sidebarGroups } from '@/components/Sidebar'
+import { sidebarGroups } from '@/components/Sidebar' // 路徑依你的專案
 
 export default function Header({ onProfileClick }) {
-  const t = useTranslations('Sidebar') // ← sidebar 分組與項目都在 Sidebar 命名空間
+  const t = useTranslations('Sidebar') // group/item key 用 Sidebar 區翻譯
+  const tHeader = useTranslations('Header')
   const { data: session } = useSession()
   const pathname = usePathname()
 
-  // 取得當前路徑對應 sidebar title（支援 group + item）
-  function getSidebarTitle(pathname) {
-    for (const group of sidebarGroups) {
-      for (const item of group.items) {
-        if (item.href === pathname) {
-          return t(item.key)
-        }
+  // 取得當前 group + item
+  function findActiveGroupAndItem(path) {
+    for (let group of sidebarGroups) {
+      for (let item of group.items) {
+        if (item.href === path) return { group, item }
       }
     }
-    // fallback：首頁
-    if (pathname === '/' || pathname.startsWith('/dashboard')) return t('summary')
-    // fallback: 自定義
-    return ''
+    // fallback: 若找不到精準 match，用 prefix
+    for (let group of sidebarGroups) {
+      for (let item of group.items) {
+        if (item.href && path.startsWith(item.href)) return { group, item }
+      }
+    }
+    return { group: sidebarGroups[0], item: sidebarGroups[0].items[0] } // 預設 overview/summary
   }
 
-  // 教學中心
+  const { group: activeGroup, item: activeItem } = findActiveGroupAndItem(pathname)
+
+  // 教學中心下拉
   function HelpDropdown() {
     const [open, setOpen] = useState(false)
     const dropdownRef = useRef(null)
-
     useEffect(() => {
       function handleClick(e) {
-        if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-          setOpen(false)
-        }
+        if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setOpen(false)
       }
       if (open) document.addEventListener('mousedown', handleClick)
       else document.removeEventListener('mousedown', handleClick)
       return () => document.removeEventListener('mousedown', handleClick)
     }, [open])
-
     const items = [
       { key: 'knowledgeBase', label: '知識庫', href: '/help/knowledge-base' },
       { key: 'qa', label: '操作說明（QA）', href: '/help/qa' },
@@ -53,16 +52,9 @@ export default function Header({ onProfileClick }) {
       { key: 'faq', label: '常見問題', href: '/help/faq' },
       { key: 'support', label: '線上客服/支援聯絡', href: '/help/support' },
     ]
-
     return (
       <div className="help-dropdown" ref={dropdownRef}>
-        <button
-          className="help-dropdown-btn"
-          onClick={() => setOpen(v => !v)}
-          type="button"
-          aria-haspopup="true"
-          aria-expanded={open}
-        >
+        <button className="help-dropdown-btn" onClick={() => setOpen(v => !v)} type="button" aria-haspopup="true" aria-expanded={open}>
           <Book size={18} style={{ marginRight: 4 }} />
           教學中心
           <span style={{ marginLeft: 2 }}>{open ? '▲' : '▼'}</span>
@@ -82,8 +74,11 @@ export default function Header({ onProfileClick }) {
 
   return (
     <header className="header">
-      <div className="header-title">
-        {getSidebarTitle(pathname) || '－'}
+      <div className="header-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* group icon + item icon + 名稱 */}
+        <span className="header-title-group-icon">{activeGroup.icon}</span>
+        {activeItem.icon && <span className="header-title-item-icon">{activeItem.icon}</span>}
+        <span>{t(activeGroup.key)} <span style={{ opacity: 0.72 }}>/</span> {t(activeItem.key)}</span>
       </div>
       <div className="header-actions">
         <HelpDropdown />

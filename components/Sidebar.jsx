@@ -1,131 +1,102 @@
 'use client'
-
 import { useTranslations } from 'next-intl'
 import { usePathname } from 'next/navigation'
 import {
   Home, LayoutDashboard, Store, MessageSquare, Star, Bot, QrCode, BellRing,
-  BarChart3, KeyRound, FileText, ListOrdered, Sparkles, ShieldCheck, Info, Landmark, Link, Image, Trophy, MapPin, TrendingUp, Settings, Brain, Megaphone, LocateFixed
+  BarChart3, KeyRound, FileText, ListOrdered, Sparkles, ShieldCheck, Info, Landmark, Link, Image,
+  Trophy, MapPin, TrendingUp, Brain, Megaphone, LocateFixed, Settings
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
-/**
- * sidebarGroups: 專門 export 給 Header、Sidebar、Breadcrumb 等其他元件用
- * icon 跟 label 不 export（label 交由 t()，icon 由 map 補）
- */
+// === 統一 Sidebar 設定（Header 也會 import 這個）===
 export const sidebarGroups = [
   {
     key: 'overview',
+    icon: <Home size={20} />,
     items: [
-      { key: 'summary', href: '/' }
+      { key: 'summary', href: '/', icon: <LayoutDashboard size={18} /> }
     ]
   },
   {
     key: 'businessProfile',
+    icon: <Store size={20} />,
     items: [
-      { key: 'locationHealthCheck', href: '/section_locations/locationHealthCheck' },
-      { key: 'basicInfoManagement', href: '/section_locations/basicInfoManagement' },
-      { key: 'propertyManagement', href: '/section_locations/propertyManagement' },
-      { key: 'linkManagement', href: '/section_locations/linkManagement' },
-      { key: 'imageManagement', href: '/section_locations/imageManagement' }
+      { key: 'locationHealthCheck', href: '/section_locations/locationHealthCheck', icon: <ShieldCheck size={18} /> },
+      { key: 'basicInfoManagement', href: '/section_locations/basicInfoManagement', icon: <Info size={18} /> },
+      { key: 'propertyManagement', href: '/section_locations/propertyManagement', icon: <Landmark size={18} /> },
+      { key: 'linkManagement', href: '/section_locations/linkManagement', icon: <Link size={18} /> },
+      { key: 'imageManagement', href: '/section_locations/imageManagement', icon: <Image size={18} /> },
     ]
   },
   {
     key: 'reputation',
+    icon: <MessageSquare size={20} />,
     items: [
-      { key: 'googleQA', href: '/section_reviews/googleQA' },
-      { key: 'reviews', href: '/section_reviews/reviews' },
-      { key: 'autoResponse', href: '/section_reviews/autoResponse' },
-      { key: 'reviewInvite', href: '/section_reviews/reviewInvite' },
-      { key: 'reviewNotifier', href: '/section_reviews/reviewNotifier' }
+      { key: 'googleQA', href: '/section_reviews/googleQA', icon: <MessageSquare size={18} /> },
+      { key: 'reviews', href: '/section_reviews/reviews', icon: <Star size={18} /> },
+      { key: 'autoResponse', href: '/section_reviews/autoResponse', icon: <Bot size={18} /> },
+      { key: 'reviewInvite', href: '/section_reviews/reviewInvite', icon: <QrCode size={18} /> },
+      { key: 'reviewNotifier', href: '/section_reviews/reviewNotifier', icon: <BellRing size={16} /> },
     ]
   },
   {
     key: 'marketingTools',
+    icon: <Sparkles size={20} />,
     items: [
-      { key: 'postList', href: '/section_posts/postList' },
-      { key: 'postBatch', href: '/section_posts/postBatch' },
-      { key: 'postGenerator', href: '/section_posts/postGenerator' }
+      { key: 'postList', href: '/section_posts/postList', icon: <FileText size={18} /> },
+      { key: 'postBatch', href: '/section_posts/postBatch', icon: <ListOrdered size={18} /> },
+      { key: 'postGenerator', href: '/section_posts/postGenerator', icon: <Sparkles size={18} /> },
     ]
   },
   {
     key: 'analytics',
+    icon: <BarChart3 size={20} />,
     items: [
-      { key: 'performance', href: '/section_performance/performance' },
-      { key: 'keyword', href: '/section_performance/keyword' }
+      { key: 'performance', href: '/section_performance/performance', icon: <BarChart3 size={18} /> },
+      { key: 'keyword', href: '/section_performance/keyword', icon: <KeyRound size={18} /> },
     ]
   },
   {
     key: 'ranking',
+    icon: <Trophy size={20} />,
     items: [
-      { key: 'localRank', href: '/section_ranking/localRank' },
-      { key: 'localSeo', href: '/section_ranking/localSeo' }
+      { key: 'localRank', href: '/section_ranking/localRank', icon: <MapPin size={18} /> },
+      { key: 'localSeo', href: '/section_ranking/localSeo', icon: <TrendingUp size={18} /> },
     ]
   },
   {
     key: 'aiAdvisor',
+    icon: <Brain size={20} />,
     items: [
-      { key: 'storeSuggestion', href: '/section_aiAdvisor/storeSuggestion' },
-      { key: 'localMarketing', href: '/section_aiAdvisor/localMarketing' },
-      { key: 'addresSuggestion', href: '/section_aiAdvisor/addresSuggestion' }
+      { key: 'storeSuggestion', href: '/section_aiAdvisor/storeSuggestion', icon: <BarChart3 size={18} /> },
+      { key: 'localMarketing', href: '/section_aiAdvisor/localMarketing', icon: <Megaphone size={18} /> },
+      { key: 'addresSuggestion', href: '/section_aiAdvisor/addresSuggestion', icon: <LocateFixed size={18} /> }
     ]
   }
 ]
 
-// icon, groupIcon: key 對應表
-const groupIcons = {
-  overview: <Home size={20} />,
-  businessProfile: <Store size={20} />,
-  reputation: <MessageSquare size={20} />,
-  marketingTools: <Sparkles size={20} />,
-  analytics: <BarChart3 size={20} />,
-  ranking: <Trophy size={20} />,
-  aiAdvisor: <Brain size={20} />
-}
-const itemIcons = {
-  summary: <LayoutDashboard size={18} />,
-  locationHealthCheck: <ShieldCheck size={18} />,
-  basicInfoManagement: <Info size={18} />,
-  propertyManagement: <Landmark size={18} />,
-  linkManagement: <Link size={18} />,
-  imageManagement: <Image size={18} />,
-  googleQA: <MessageSquare size={18} />,
-  reviews: <Star size={18} />,
-  autoResponse: <Bot size={18} />,
-  reviewInvite: <QrCode size={18} />,
-  reviewNotifier: <BellRing size={16} />,
-  postList: <FileText size={18} />,
-  postBatch: <ListOrdered size={18} />,
-  postGenerator: <Sparkles size={18} />,
-  performance: <BarChart3 size={18} />,
-  keyword: <KeyRound size={18} />,
-  localRank: <MapPin size={18} />,
-  localSeo: <TrendingUp size={18} />,
-  storeSuggestion: <BarChart3 size={18} />,
-  localMarketing: <Megaphone size={18} />,
-  addresSuggestion: <LocateFixed size={18} />
-}
-
-// 點擊次數記錄
-function recordSidebarUsage(key) {
-  if (typeof window === 'undefined') return
-  const stats = JSON.parse(localStorage.getItem('sidebarUsage') || '{}')
-  stats[key] = (stats[key] || 0) + 1
-  localStorage.setItem('sidebarUsage', JSON.stringify(stats))
-}
-function getTopUsages(n = 5) {
-  if (typeof window === 'undefined') return []
-  const stats = JSON.parse(localStorage.getItem('sidebarUsage') || '{}')
-  return Object.entries(stats)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, n)
-    .map(([key]) => key)
-}
-
+// ========== Sidebar 本體 ==========
 export default function Sidebar() {
   const t = useTranslations('Sidebar')
   const pathname = usePathname()
   const [openKeys, setOpenKeys] = useState([])
   const [topUsageKeys, setTopUsageKeys] = useState([])
+
+  // 記錄常用
+  function recordSidebarUsage(key) {
+    if (typeof window === 'undefined') return
+    const stats = JSON.parse(localStorage.getItem('sidebarUsage') || '{}')
+    stats[key] = (stats[key] || 0) + 1
+    localStorage.setItem('sidebarUsage', JSON.stringify(stats))
+  }
+  function getTopUsages(n = 5) {
+    if (typeof window === 'undefined') return []
+    const stats = JSON.parse(localStorage.getItem('sidebarUsage') || '{}')
+    return Object.entries(stats)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, n)
+      .map(([key]) => key)
+  }
 
   // 攤平成一維所有子項
   const allItemsFlat = sidebarGroups.flatMap(g => g.items)
@@ -162,13 +133,11 @@ export default function Sidebar() {
       <div className="sidebar-top">
         <img src="/logo-marptek.png" alt="MARPTEK" width="120" />
       </div>
-
       <div className="sidebar-middle">
         {sidebarGroups.map(group => {
           // overview分組特殊插入
           let groupItems = group.items
           if (group.key === 'overview' && openKeys.includes('overview')) {
-            // summary + divider + 常用
             groupItems = [
               group.items[0],
               ...(topUsageItems.length > 0
@@ -179,7 +148,6 @@ export default function Sidebar() {
               )
             ]
           }
-
           return (
             <div key={group.key}>
               <button
@@ -189,7 +157,7 @@ export default function Sidebar() {
                 aria-controls={`sidebar-group-${group.key}`}
                 type="button"
               >
-                <span className="icon">{groupIcons[group.key]}</span>
+                <span className="icon">{group.icon}</span>
                 <span>{t(group.key)}</span>
                 <span className="arrow">{openKeys.includes(group.key) ? '▲' : '▼'}</span>
               </button>
@@ -209,7 +177,7 @@ export default function Sidebar() {
                         onClick={() => handleSidebarClick(item)}
                         style={item.key !== 'summary' && group.key === 'overview' && topUsageItems.find(i => i.key === item.key) ? { fontSize: '0.95em', opacity: 0.94, paddingLeft: '2.2rem' } : undefined}
                       >
-                        {itemIcons[item.key]}
+                        {item.icon}
                         <span>{t(item.key)}</span>
                       </a>
                     )
@@ -220,13 +188,8 @@ export default function Sidebar() {
           )
         })}
       </div>
-
-      {/* 設定 */}
       <div className="sidebar-bottom">
-        <a
-          href="/settings"
-          className="sidebar-settings-icon"
-        >
+        <a href="/settings" className="sidebar-settings-icon">
           <Settings size={20} />
         </a>
       </div>
