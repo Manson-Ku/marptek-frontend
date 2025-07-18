@@ -33,7 +33,7 @@ export function useHasGBPAccess() {
       : null,
     fetcher,
     {
-      // 你可以根據需要調整 refreshInterval（自動輪詢）
+      // 可以根據需要調整 refreshInterval（自動輪詢）
       // refreshInterval: 60000, // 每 1 分鐘查一次
       // revalidateOnFocus: true, // 切回畫面自動刷新（預設就是 true）
     }

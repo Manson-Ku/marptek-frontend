@@ -31,37 +31,43 @@
     "reputation": "Reputation Center",
     "marketingTools": "Marketing Tools",
     "analytics": "Analytics",
-    "ranking": "Local Ranking",
+    "localRanking": "Local Ranking",
     "aiAdvisor": "AI Advisor",
 
-    "summary": "Summary",
-    "favoriteShortcuts": "Favorite Link",
+    "summary": "Recent Overview",
+    "favoriteShortcuts": "Favorite Shortcuts",
 
-    "googleQA": "Google QA",
+    "locationManagement": "Location Management",
+    "locationHealthCheck": "Location Health Check",
+    "imageManagement": "Photo Management",
+    "menuManagement": "Menu Management",
+    "batchManagement": "Bulk Edit",
+
     "reviews": "Review Management",
     "autoResponse": "Auto Response",
-    "reviewInvite": "Invite Reviews",
-    "reviewNotifier": "Review Notify",
-
-    "performance": "Performance Analysis",
-    "keyword": "Keyword Insights",
+    "replyLog": "Reply Log",
+    "googleQA": "Customer Q&A",
+    "reviewInvite": "Review Invitation",
+    "reviewNotifier": "Review Notification",
 
     "postList": "Post List",
-    "postBatch": "Bulk Posting",
-    "postGenerator": "AI Post Generator",
+    "postSingle": "Single Post",
+    "schedulePost": "Scheduled Posts",
+    "postBatch": "Bulk Post",
+    "aiPost": "AI Auto Post",
 
-    "locationHealthCheck": "Location Health Check",
-    "basicInfoManagement": "Basic Information",
-    "propertyManagement": "Categories & Attributes",
-    "linkManagement": "Link Management",
-    "imageManagement": "Image Management",
+    "reviewAnalytics": "Review Analytics",
+    "performance": "Performance Analytics",
+    "keyword": "Hot Keywords",
+    "locationRankings": "Store Rankings",
+    "competitor": "Competitor Analysis",
 
-    "localRank": "Local Ranking",
-    "localSeo": "Map SEO Optimization",
+    "keywordSetting": "Keyword Settings",
+    "localRank": "Local Ranking Report",
 
     "storeSuggestion": "Operation Suggestions",
-    "localMarketing": "Local Marketing Suggestions",
-    "addresSuggestion": "Location Recommendation"
+    "localMarketing": "Local Marketing Advisor",
+    "addressSuggestion": "Location Assessment"
   },
   "Header": {
     "dashboard": "Dashboard",

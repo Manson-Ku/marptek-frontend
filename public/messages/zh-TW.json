@@ -31,36 +31,45 @@
     "reputation": "輿情中心",
     "marketingTools": "行銷工具",
     "analytics": "數據分析",
-    "ranking": "排名優化",
+    "localRanking": "排名優化",
     "aiAdvisor": "AI 顧問",
 
     "summary": "近期營運摘要",
     "favoriteShortcuts": "常用捷徑",
-    "googleQA": "Google QA",
+
+    "locationManagement": "商家檔案編輯",
+    "locationHealthCheck": "門市健檢",
+    "imageManagement": "照片管理",
+    "menuManagement": "菜單管理",
+    "batchManagement": "大量編輯",
+
+
     "reviews": "評論管理",
     "autoResponse": "自動回覆",
+    "replyLog": "回覆紀錄",
+    "googleQA": "消費者問與答",
     "reviewInvite": "邀請評論",
     "reviewNotifier": "評論即時通",
 
-    "performance": "成效分析",
-    "keyword": "熱門關鍵字",
-
     "postList": "貼文清單",
-    "postBatch": "批次發布",
-    "postGenerator": "AI 貼文產生器",
+    "postSingle": "貼文張貼",
+    "schedulePost": "排程貼文",
+    "postBatch": "大量貼文",
+    "aiPost": "AI 自動貼文",
 
-    "locationHealthCheck": "地點健檢",
-    "basicInfoManagement": "基本資訊",
-    "propertyManagement": "類別屬性",
-    "linkManagement": "連結管理",
-    "imageManagement": "圖片管理",
+    "reviewAnalytics": "評論分析",
+    "performance": "商家曝光成效",
+    "keyword": "熱門關鍵字",
+    "locationRankings": "門市排行榜",
+    "competitor": "競爭者分析",
 
-    "localRank": "在地排名",
-    "localSeo": "地圖 SEO 優化",
+
+    "keywordSetting": "關鍵字設定",
+    "localRank": "地圖排名報告",
 
     "storeSuggestion": "營運建議",
-    "localMarketing": "在地行銷建議",
-    "addresSuggestion": "開店選址建議"
+    "localMarketing": "在地行銷顧問",
+    "addressSuggestion": "開店選址評估"
   },
   "Header": {
     "dashboard": "儀表板",

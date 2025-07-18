@@ -4,7 +4,8 @@ import { usePathname } from 'next/navigation'
 import {
   Home, LayoutDashboard, Store, MessageSquare, Star, Bot, QrCode, BellRing,
   BarChart3, KeyRound, FileText, ListOrdered, Sparkles, ShieldCheck, Info, Landmark, Link, Image,
-  Trophy, MapPin, TrendingUp, Brain, Megaphone, LocateFixed, Settings
+  Trophy, MapPin, TrendingUp, Brain, Megaphone, LocateFixed, Settings,
+  Utensils, History, HelpCircle, Edit, CalendarClock, PieChart, BarChart2, Lightbulb
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -21,56 +22,62 @@ export const sidebarGroups = [
     key: 'businessProfile',
     icon: <Store size={20} />,
     items: [
+      { key: 'locationManagement', href: '/section_locations/basicInfoManagement', icon: <MapPin size={18} /> },
       { key: 'locationHealthCheck', href: '/section_locations/locationHealthCheck', icon: <ShieldCheck size={18} /> },
-      { key: 'basicInfoManagement', href: '/section_locations/basicInfoManagement', icon: <Info size={18} /> },
-      { key: 'propertyManagement', href: '/section_locations/propertyManagement', icon: <Landmark size={18} /> },
-      { key: 'linkManagement', href: '/section_locations/linkManagement', icon: <Link size={18} /> },
-      { key: 'imageManagement', href: '/section_locations/imageManagement', icon: <Image size={18} /> },
+      { key: 'imageManagement', href: '/section_locations/imageManagement', icon: <Image size={18} /> },      
+      { key: 'menuManagement', href: '/section_locations/menuManagement', icon: <Utensils size={18} /> },
+      { key: 'batchManagement', href: '/section_locations/batchManagement', icon: <ListOrdered size={18} /> },
     ]
   },
   {
     key: 'reputation',
     icon: <MessageSquare size={20} />,
     items: [
-      { key: 'googleQA', href: '/section_reviews/googleQA', icon: <MessageSquare size={18} /> },
       { key: 'reviews', href: '/section_reviews/reviews', icon: <Star size={18} /> },
       { key: 'autoResponse', href: '/section_reviews/autoResponse', icon: <Bot size={18} /> },
+      { key: 'replyLog', href: '/section_reviews/replyLog', icon: <History size={18} /> },
+      { key: 'googleQA', href: '/section_reviews/googleQA', icon: <HelpCircle size={18} /> },     
       { key: 'reviewInvite', href: '/section_reviews/reviewInvite', icon: <QrCode size={18} /> },
       { key: 'reviewNotifier', href: '/section_reviews/reviewNotifier', icon: <BellRing size={16} /> },
     ]
   },
   {
     key: 'marketingTools',
-    icon: <Sparkles size={20} />,
+    icon: <Megaphone size={20} />,
     items: [
       { key: 'postList', href: '/section_posts/postList', icon: <FileText size={18} /> },
+      { key: 'postSingle', href: '/section_posts/postSingle', icon: <Edit size={18} /> },
+      { key: 'schedulePost', href: '/section_posts/schedulePost', icon: <CalendarClock size={18} /> },
       { key: 'postBatch', href: '/section_posts/postBatch', icon: <ListOrdered size={18} /> },
-      { key: 'postGenerator', href: '/section_posts/postGenerator', icon: <Sparkles size={18} /> },
+      { key: 'aiPost', href: '/section_posts/aiPost', icon: <Sparkles size={18} /> },
     ]
   },
   {
     key: 'analytics',
     icon: <BarChart3 size={20} />,
     items: [
-      { key: 'performance', href: '/section_performance/performance', icon: <BarChart3 size={18} /> },
-      { key: 'keyword', href: '/section_performance/keyword', icon: <KeyRound size={18} /> },
+      { key: 'reviewAnalytics', href: '/section_analytics/reviewAnalytics', icon: <PieChart size={18} /> },
+      { key: 'performance', href: '/section_analytics/performance', icon: <TrendingUp size={18} /> },
+      { key: 'keyword', href: '/section_analytics/keyword', icon: <KeyRound size={18} /> },
+      { key: 'locationRankings', href: '/section_analytics/locationRankings', icon: <Trophy size={18} /> },
+      { key: 'competitor', href: '/section_analytics/competitor', icon: <BarChart2 size={18} /> },      
     ]
   },
   {
-    key: 'ranking',
+    key: 'localRanking',
     icon: <Trophy size={20} />,
     items: [
-      { key: 'localRank', href: '/section_ranking/localRank', icon: <MapPin size={18} /> },
-      { key: 'localSeo', href: '/section_ranking/localSeo', icon: <TrendingUp size={18} /> },
+      { key: 'keywordSetting', href: '/section_ranking/keywordSetting', icon: <Settings size={18} /> },
+      { key: 'localRank', href: '/section_ranking/localRank', icon: <TrendingUp size={18} /> },
     ]
   },
   {
     key: 'aiAdvisor',
     icon: <Brain size={20} />,
     items: [
-      { key: 'storeSuggestion', href: '/section_aiAdvisor/storeSuggestion', icon: <BarChart3 size={18} /> },
+      { key: 'storeSuggestion', href: '/section_aiAdvisor/storeSuggestion', icon: <Lightbulb size={18} /> },
       { key: 'localMarketing', href: '/section_aiAdvisor/localMarketing', icon: <Megaphone size={18} /> },
-      { key: 'addresSuggestion', href: '/section_aiAdvisor/addresSuggestion', icon: <LocateFixed size={18} /> }
+      { key: 'addressSuggestion', href: '/section_aiAdvisor/addressSuggestion', icon: <LocateFixed size={18} /> }
     ]
   }
 ]
